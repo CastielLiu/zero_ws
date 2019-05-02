@@ -25,6 +25,7 @@ Nuogeng::~Nuogeng()
 	}
 	delete [] buffer_;
 	delete [] data_buffer_;
+	ROS_INFO("nuogeng_node is shutdown");
 }
 
 bool Nuogeng::init()
