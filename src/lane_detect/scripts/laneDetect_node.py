@@ -12,7 +12,7 @@ from cv_bridge import CvBridge, CvBridgeError
 class LaneDetect():
 	def __init__(self):
 		rospy.init_node('laneDetect_node')
-		self._lane = Lane()
+		self.lane_msg = Lane()
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=1)
 		self.bridge = CvBridge()
 		self.sub_image = rospy.Subscriber("/image_rectified",Image,self.image_callback)
@@ -29,6 +29,11 @@ class LaneDetect():
 		
 		left_dis,right_dis,theta = laneDetect(frame)
 		
+		self.lane_msg.left_offset = -left_dis
+		self.lane_msg.right_offset = right_dis
+		self.lane_msg.theta = theta
+		
+		self.pub_lane_msg.publish(lane_msg)
 		
 def main():
 	_lane_detect = LaneDetect()
