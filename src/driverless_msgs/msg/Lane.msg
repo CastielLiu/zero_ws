@@ -1,3 +1,5 @@
-float32 left_offset
-float32 right_offset
+
+bool validity
+float32 lane_width
+float32 offset
 float32 theta

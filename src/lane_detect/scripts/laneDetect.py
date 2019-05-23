@@ -7,14 +7,23 @@ import math
 import os
 import numpy as np
 
-g_debug = False
+
+g_debug = True
+objectOffset = 100
+disIncrement = 3.5/(617-6-2*objectOffset)
+image_height = 480
+image_width = 640
+cut_height = 218
+
+
 
 def get_M_Minv():  
-    src = np.float32([(86,177), (263,0), (349,0), (552,177)])
+    src = np.float32([(6,468-cut_height), (280,0), (345,0), (617,468-cut_height)])
     #dst = np.float32([(86, 453), (86, 276), (552,276), (552,453)])
     #offset = 220/2
-    offset = 0
-    dst = np.float32([(86+offset, 204), (86+offset, 0), (552-offset,0), (552-offset,204)])
+    
+    dst = np.float32([(6+objectOffset, 468-cut_height), (6+objectOffset, 0), \
+    				  (617-objectOffset,0), (617-objectOffset,468-cut_height)])
     
     M = cv2.getPerspectiveTransform(src, dst)
     Minv = cv2.getPerspectiveTransform(dst,src)
@@ -34,7 +43,14 @@ def insertSort(array):
 				break;
 			j = j-1
 		array[j+1] = anchor
-	
+
+def rad2deg(rad):
+	return rad*180.0/np.pi
+
+def deg2rad(deg):
+	return deg*np.pi/180.0
+
+
 def drawLine(img,line,color,width=2):
 	rho,theta = line[0]
 	a = np.cos(theta)
@@ -58,10 +74,10 @@ def findNearestLinesMsg(img,lines):
 		x = (rho - height*_sin)/_cos
 		disArray.append(x-width/2)
 	
-	left_index = 0
-	right_index = 0
-	left_max_dis = -width/2
-	right_min_dis = width/2
+	left_index = -1
+	right_index = -1
+	left_max_dis = -float('inf')
+	right_min_dis = float('inf')
 
 	for i in range(len(disArray)):
 		if(disArray[i]>0):
@@ -73,39 +89,107 @@ def findNearestLinesMsg(img,lines):
 				left_max_dis = disArray[i]
 				left_index = i
 				
+	if(left_index==-1 or right_index==-1):
+		return None
+		
+	offset = -(right_min_dis+left_max_dis)*disIncrement
+	lane_width = (right_min_dis-left_max_dis)*disIncrement
+	
+	if lane_width < 2.0:
+		return None
+				
 	theta = lines[left_index,0,1] + lines[right_index,0,1]
 	
 	theta = theta * 180.0/np.pi
 	
 	if(theta > 90.0):
-		theta = theta - 180.0
+		theta = theta -180.0
 	
-	return left_index,right_index,left_max_dis,right_min_dis,theta
+	return [left_index,right_index,lane_width,offset,theta]
+
+def findNearestLinesIndex(img,lines,theta_limit=180.0):
+	disArray = []
+	height = img.shape[0]
+	width = img.shape[1]
 	
-def laneDetect(image):	
+	for line in lines:
+		rho,theta = line[0]
+		true_theta = theta
+		if theta > np.pi/2:
+			true_theta = theta-np.pi
+		
+		if(true_theta > deg2rad(theta_limit) or true_theta < deg2rad(-theta_limit)):
+			disArray.append(0.0)
+			continue
+		_cos = np.cos(theta)
+		_sin = np.sin(theta)
+		x = (rho - height*_sin)/_cos
+		disArray.append(x-width/2)
+		
+	left_index = -1
+	right_index = -1
+	left_max_dis = -float('inf')
+	right_min_dis = float('inf')
 
-	srcImage = cv2.resize(image,(640,480))
+	for i in range(len(disArray)):
+		if(disArray[i] == 0.0):
+			continue
+		elif(disArray[i]>0):
+			if(disArray[i] < right_min_dis):
+				right_min_dis = disArray[i]
+				right_index = i
+		else:
+			if(disArray[i] > left_max_dis):
+				left_max_dis = disArray[i]
+				left_index = i
+				
+	if(left_index==-1 or right_index==-1):
+		return None
+	return [left_index,right_index]	
 
-	image = srcImage[276:480, : ]  #intresting area
+
+def laneDetect(image):
+
+	#srcImage = cv2.resize(image,(640,480))
+	srcImage = image.copy()
+	
+	#cv2.imshow('rawImage',srcImage)
+
+	image = srcImage[cut_height:image_height, : ]  #intresting area
 
 	img_gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
 
 	blur = cv2.GaussianBlur(img_gray, (3, 3), 0)
 
-	canny = cv2.Canny(blur,120,300)
+	canny = cv2.Canny(blur,200,450)
 	if g_debug:
 		cv2.imshow('canny',canny)
 
-	lines = cv2.HoughLines(canny,1,np.pi/180,135)
+	lines = cv2.HoughLines(canny,1,np.pi/180,60)
+	
+	if lines is None:
+		cv2.imshow('result',image)
+		return None
 
 	pure = np.zeros((image.shape[0],image.shape[1],1), np.uint8)
 
-	for line in lines:
-		drawLine(pure,line,(255,255,255),2)
+	index = findNearestLinesIndex(image,lines,60.0)
+	
+	if index is None:
+		cv2.imshow('result',image)
+		print 'index is None'
+		return None
+
+	drawLine(pure,lines[index[0]],(255,255,255),1)
+	drawLine(pure,lines[index[1]],(255,255,255),1)
+
+	
+	
 		
 	if g_debug:
 		cv2.imshow('pure',pure)
-
+	
+	
 	"""
 	kernel = np.ones((2,2),np.uint8)
 
@@ -125,15 +209,23 @@ def laneDetect(image):
 	if g_debug:
 		cv2.imshow('canny2',canny)
 
-	lines = cv2.HoughLines(canny,1,np.pi/180,80)
-
-	left_index,right_index,left_dis,right_dis,theta = findNearestLinesMsg(image,lines)
+	lines = cv2.HoughLines(canny,1,np.pi/180,70)
 	
-	print('left :%d\t%d' %(left_index,left_dis))
-	print('right:%d\t%d' %(right_index,right_dis))
+	if lines is None:
+		cv2.imshow('result',image)
+		return None
+		
+	laneMsgs = findNearestLinesMsg(image,lines)  #left_index,right_index,lane_width,offset,theta
+	
+	if laneMsgs is None:
+		cv2.imshow('result',image)
+		return None
 
 	pure = np.zeros((image.shape[0],image.shape[1],image.shape[2]), np.uint8)
-
+	
+	left_index = laneMsgs[0]
+	right_index = laneMsgs[1]
+	
 	drawLine(pure,lines[left_index],(0,0,255),5)
 	drawLine(pure,lines[right_index],(0,0,255),5)
 	if g_debug:
@@ -150,22 +242,26 @@ def laneDetect(image):
 
 	cv2.imshow('result',image)
 	
-	return left_dis,right_dis,theta
-
-
+	return laneMsgs[2:]
 
 def main():
-	image = cv2.imread('lane.jpg')
-	
+	count = 0
 	while True:
-		print(laneDetect(image))
-		if(cv2.waitKey(500) != -1):
+		file_name = 'image/'+str(count)+'.jpg'
+		image = cv2.imread(file_name)
+		if image is None:
 			break
+		count = count+1
+		print(laneDetect(image))
+		print cv2.waitKey(0)
+		#cv2.destroyAllWindows()
 			
 				
 if __name__ =='__main__':
-	main()
-
+	try:
+		main()
+	except KeyboardInterrupt:
+		exit()
 """
 for col in range(image.shape[1]):
 	for channel in range(image.shape[2]):
