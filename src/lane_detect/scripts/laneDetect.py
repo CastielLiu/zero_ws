@@ -10,20 +10,19 @@ import numpy as np
 
 g_debug = True
 objectOffset = 100
-disIncrement = 3.5/(617-6-2*objectOffset)
+disIncrement = 1.0/(639-0-2*objectOffset)
 image_height = 480
 image_width = 640
-cut_height = 218
-
+cut_height = 207
 
 
 def get_M_Minv():  
-    src = np.float32([(6,468-cut_height), (280,0), (345,0), (617,468-cut_height)])
+    src = np.float32([(0,419-cut_height), (304,0), (367,0), (639,419-cut_height)])
     #dst = np.float32([(86, 453), (86, 276), (552,276), (552,453)])
     #offset = 220/2
     
-    dst = np.float32([(6+objectOffset, 468-cut_height), (6+objectOffset, 0), \
-    				  (617-objectOffset,0), (617-objectOffset,468-cut_height)])
+    dst = np.float32([(0+objectOffset, 419-cut_height), (0+objectOffset, 0), \
+    				  (639-objectOffset,0), (639-objectOffset,419-cut_height)])
     
     M = cv2.getPerspectiveTransform(src, dst)
     Minv = cv2.getPerspectiveTransform(dst,src)
@@ -95,8 +94,8 @@ def findNearestLinesMsg(img,lines):
 	offset = -(right_min_dis+left_max_dis)*disIncrement
 	lane_width = (right_min_dis-left_max_dis)*disIncrement
 	
-	if lane_width < 2.0:
-		return None
+	#if lane_width < 2.0:
+	#	return None
 				
 	theta = lines[left_index,0,1] + lines[right_index,0,1]
 	
@@ -161,11 +160,11 @@ def laneDetect(image):
 
 	blur = cv2.GaussianBlur(img_gray, (3, 3), 0)
 
-	canny = cv2.Canny(blur,200,450)
+	canny = cv2.Canny(blur,85,250)
 	if g_debug:
 		cv2.imshow('canny',canny)
 
-	lines = cv2.HoughLines(canny,1,np.pi/180,60)
+	lines = cv2.HoughLines(canny,1,np.pi/180,130)
 	
 	if lines is None:
 		cv2.imshow('result',image)
@@ -203,13 +202,19 @@ def laneDetect(image):
 	if g_debug:
 		cv2.imshow("top_view",top_view)
 
-	blur = cv2.GaussianBlur(top_view, (3, 3), 0)
+	#blur = cv2.GaussianBlur(top_view, (5, 5), 0)
+	
+	kernel = np.ones((10,2),np.uint8)
 
-	canny = cv2.Canny(blur,100,300)
+	dilation = cv2.dilate(top_view,kernel,iterations = 2)
+	cv2.imshow('dilation',dilation)
+
+	canny = cv2.Canny(dilation,150,300)
 	if g_debug:
+		cv2.imshow('blur2',blur)
 		cv2.imshow('canny2',canny)
 
-	lines = cv2.HoughLines(canny,1,np.pi/180,70)
+	lines = cv2.HoughLines(canny,1,np.pi/180,90)
 	
 	if lines is None:
 		cv2.imshow('result',image)
