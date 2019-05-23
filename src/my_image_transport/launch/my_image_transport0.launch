@@ -1,0 +1,11 @@
+<!-- -->
+
+<launch>
+ <arg name="camera_num" default="0"/>
+
+    <node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen"
+    args="$(arg camera_num)">
+   
+    </node>
+
+</launch>
