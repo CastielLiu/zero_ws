@@ -9,15 +9,13 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-class LaneDetect_node():
+class LaneDetect():
 	def __init__(self):
 		rospy.init_node('laneDetect_node')
 		self.lane_msg = Lane()
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=1)
 		self.bridge = CvBridge()
 		self.sub_image = rospy.Subscriber("/image_raw",Image,self.image_callback)
-		self.lane_detect = LaneDetect()
-		self.lane_detect.set_debug(True)
 		
 	def run(self):
 		rospy.spin()
@@ -33,10 +31,7 @@ class LaneDetect_node():
 		#cv2.imwrite('image.jpg',frame)
 		cv2.waitKey(1)
 		
-		laneMsg = self.lane_detect.process(frame)
-		
-		cv2.imshow('result',frame)
-		cv2.waitKey(1)
+		laneMsg = laneDetect(frame)
 		
 		if laneMsg is None:
 			self.lane_msg.validity = False
@@ -49,7 +44,7 @@ class LaneDetect_node():
 		self.pub_lane_msg.publish(self.lane_msg)
 		
 def main():
-	_lane_detect = LaneDetect_node()
+	_lane_detect = LaneDetect()
 	_lane_detect.run()
 	
 if __name__ == '__main__':
