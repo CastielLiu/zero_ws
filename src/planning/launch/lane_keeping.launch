@@ -1,0 +1,15 @@
+<!-- -->
+<launch>
+
+	<arg name="max_speed"  default="2.0"/>
+	
+	
+	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node">
+	
+	</node>
+
+
+</launch>
+
+
+
