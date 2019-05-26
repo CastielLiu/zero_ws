@@ -71,12 +71,12 @@ class Parameters():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 205
+		self.__cut_height = 102
 		self.__offset = 100 #pixel
-		self.__A = (0,415)
-		self.__B = (301,205)
-		self.__C = (366,205)
-		self.__D = (635,415)
+		self.__A = (3,446)
+		self.__B = (241,102)
+		self.__C = (329,102)
+		self.__D = (638,446)
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -86,6 +86,10 @@ class Parameters():
 		self.__transform_M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__transform_Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
 		self.__xmPerPixel = 1.0/(self.__D_[0]-self.__A_[0])
+		self.__ymPerpixel = 8.60/(self.__D_[1]-self.__C_[1])
+		
+		print(self.__xmPerPixel,self.__ymPerpixel)
+		
 	def imageHeight(self):
 		return self.__image_height
 	def image_width(self):
@@ -98,6 +102,8 @@ class Parameters():
 		return self.__cut_height
 	def xmPerPixel(self):
 		return self.__xmPerPixel
+	def ymPerPixel(self):
+		return self.__ymPerpixel
 		
 class Point():
 	def __init__(self,x,y):
@@ -195,7 +201,7 @@ class LaneDetect():
 		canny = cv2.Canny(blur,85,250)
 		if self.__is_debug:
 			cv2.imshow('canny',canny)
-		lines = cv2.HoughLines(canny,1,np.pi/180,130)
+		lines = cv2.HoughLines(canny,1,np.pi/180,140)
 		if lines is None:
 			return None
 		
@@ -234,14 +240,14 @@ class LaneDetect():
 		lane_width = (right_line[1].x - left_line[1].x)*self.__params.xmPerPixel()
 		
 		left_k = 1.0*(left_line[1].x - left_line[0].x)/(left_line[1].y - left_line[0].y)
+		left_k = left_k*self.__params.xmPerPixel()/self.__params.ymPerPixel()
 		left_theta = math.atan(left_k)
 		
 		right_k = 1.0*(right_line[1].x - right_line[0].x)/(right_line[1].y - right_line[0].y)
+		right_k = right_k*self.__params.xmPerPixel()/self.__params.ymPerPixel()
 		right_theta = math.atan(right_k)
 		
 		theta = (left_theta + right_theta)*180.0/math.pi
-	
-		
 	
 		return lane_width,latErr,theta
 		
