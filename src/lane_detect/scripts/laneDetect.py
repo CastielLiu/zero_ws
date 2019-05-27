@@ -254,15 +254,12 @@ class LaneDetect():
 
 def main():
 	lane_detect = LaneDetect()
-	count = 0
-	while True:
-		file_name = 'image/'+str(count)+'.jpg'
-		image = cv2.imread(file_name)
-		if image is None:
-			break
-		count = count+1
-		lane_detect.process(image)
-		cv2.waitKey(0)
+	image = cv2.imread('lane.jpg')
+	if image is None:
+		return
+	lane_detect.process(image)
+	cv2.imshow('result',image)
+	cv2.waitKey(0)
 			
 
 if __name__ =='__main__':
