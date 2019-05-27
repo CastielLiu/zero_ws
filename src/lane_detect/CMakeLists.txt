@@ -16,26 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
 	sensor_msgs 
 	cv_bridge 
 	image_transport
-
+	dynamic_reconfigure
+	param_config
 )
-
-
 
 catkin_package(
   CATKIN_DEPENDS
 )
-
-###########
-## Build ##
-###########
-
-## Specify additional locations of header files
-## Your package locations should be listed before other locations
-include_directories(
-  include/test ${catkin_INCLUDE_DIRS}
-  include ${catkin_INCLUDE_DIRS}
-# include
-  ${catkin_INCLUDE_DIRS}
-)
-
 

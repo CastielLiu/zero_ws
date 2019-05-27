@@ -14,6 +14,9 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
+from dynamic_reconfigure.server import Server
+from param_config.cfg import lane_detectConfig
+
 
 # Define a class to receive the characteristics of each line detection
 class Line():
@@ -73,7 +76,7 @@ class LaneDetect():
 		self.__image_height = 480
 		self.__image_width = 640
 		self.__cut_height = 209				##@param
-		self.__offset = 100 #pixel
+		self.__offset = 150 #pixel
 		self.__A = (0,420)					##@param
 		self.__B = (298,self.__cut_height)	##@param
 		self.__C = (369,self.__cut_height)	##@param
@@ -90,45 +93,89 @@ class LaneDetect():
 		self.__ymPerpixel = 8.60/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
+		self.__sobel_thresh_x = (35,100)
+		self.__sobel_thresh_y = ()
+		self.__h_thresh = ()
+		self.__l_thresh = (80,200)
+		self.__s_thresh = (180,255)
 		
-	def abs_sobel_thresh(self,img,orient='x',thresh_min=0,thresh_max=255):
+		self.__debug = False
+		
+	def setDebug(self,status):
+		self.__debug = status
+		
+	def abs_sobel_thresh(self,img,orient='x'):
 		gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
 		if orient == 'x':
 			abs_sobel = np.absolute(cv2.Sobel(gray,cv2.CV_64F,1,0))
-		if orient =='y':
+			scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
+			binary_output = np.zeros_like(scaled_sobel)
+			binary_output[(scaled_sobel >= self.__sobel_thresh_x[0]) & (scaled_sobel <=self.__sobel_thresh_x[1])] = 255
+		elif orient =='y':
 			abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 0, 1))
-		
-		scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
-		binary_output = np.zeros_like(scaled_sobel)
-		
-		binary_output[(scaled_sobel >= thresh_min) & (scaled_sobel <= thresh_max)] = 255
-		
+			scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
+			binary_output = np.zeros_like(scaled_sobel)
+			binary_output[(scaled_sobel >= self.__sobel_thresh_y[0]) & (scaled_sobel <=self.__sobel_thresh_y[1])] = 255
 		return binary_output
 
-	def hls_select(self,img,channel='s',thresh=(0, 255)):
+	def hls_select(self,img,channel='s'):
 		hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
 		if channel == 'h':
-		    channel = hls[:, :, 0]
+			channel = hls[:, :, 0]
+			binary_output = np.zeros_like(channel)
+			binary_output[(channel > self.__h_thresh[0]) & (channel <= self.__h_thresh[1])] = 255
 		elif channel == 'l':
-		    channel = hls[:, :, 1]
+			channel = hls[:, :, 1]
+			binary_output = np.zeros_like(channel)
+			binary_output[(channel > self.__l_thresh[0]) & (channel <= self.__l_thresh[1])] = 255
 		else:
-		    channel = hls[:, :, 2]
-		binary_output = np.zeros_like(channel)
-		binary_output[(channel > thresh[0]) & (channel <= thresh[1])] = 255
+			channel = hls[:, :, 2]
+			binary_output = np.zeros_like(channel)
+			binary_output[(channel > self.__s_thresh[0]) & (channel <= self.__s_thresh[1])] = 255
 		return binary_output
 		
 	def thresholding(self,img):
-		x_thresh = self.abs_sobel_thresh(img, orient='x', thresh_min=35 ,thresh_max=100)
+		x_thresh = self.abs_sobel_thresh(img, orient='x')
 	
 		#cv2.imshow("scaled_sobel",binary_output)
-		hls_thresh_white = self.hls_select(img,channel='l', thresh=(80, 200))
-		hls_thresh_yellow = self.hls_select(img,channel='s', thresh=(180, 255))
+		hls_thresh_white = self.hls_select(img,channel='l')
+		hls_thresh_yellow = self.hls_select(img,channel='s')
 		#cv2.imshow("scaled_sobel",hls_thresh_yellow)
-		threshholded = np.zeros_like(x_thresh)
-	
-		threshholded[(hls_thresh_white == 255) & (hls_thresh_yellow == 255) | (x_thresh == 255) ]=255
-		return threshholded
+		thresholded = np.zeros_like(x_thresh)
+		thresholded[(hls_thresh_white == 255) & (hls_thresh_yellow == 255) | (x_thresh == 255) ]=255
+		
+		if self.__debug:
+			cv2.imshow('x_thresh',x_thresh)
+			cv2.imshow('hls_thresh_white',hls_thresh_white)
+			cv2.imshow('hls_thresh_yellow',hls_thresh_yellow)
+			cv2.imshow("thresholded",thresholded)
+		
+		return thresholded
 
+	#-----------------------------------------main process----------------------------------#
+	#---------------------------------------------------------------------------------------#
+	def processing(self,frame):
+		
+		wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		thresholded = self.thresholding(wraped)
+		if self.__left_line.detected and self.__right_line.detected:
+			left_fit, right_fit = self.find_line_by_previous(thresholded)
+		else:
+			left_fit, right_fit = self.find_line(thresholded)
+
+		pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
+		
+		area_img = self.draw_area(frame,left_fit,right_fit)
+		result = self.draw_values(area_img,pos_from_center,angle)
+		cv2.imshow("result",result)
+		cv2.waitKey(1)
+			
+		msg = Lane()
+		msg.validity = validity
+		msg.offset = -pos_from_center
+		msg.theta = angle
+		return msg
+		
 	def find_line(self,binary_warped):
 		# Take a histogram of the bottom half of the image
 		histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
@@ -183,7 +230,7 @@ class LaneDetect():
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
 		right_lane_inds = np.concatenate(right_lane_inds)
-
+		
 		# Extract left and right line pixel positions
 		leftx = nonzerox[left_lane_inds]
 		lefty = nonzeroy[left_lane_inds]
@@ -222,6 +269,7 @@ class LaneDetect():
 	def calculate_lane_state(self,left_fit, right_fit):
 		left_angle=math.atan(left_fit[0]) * self.__xmPerPixel/self.__ymPerpixel
 		right_angle=math.atan(right_fit[0])*self.__xmPerPixel/self.__ymPerpixel
+		
 		angle=((left_angle+right_angle)/2)
 	
 		left_bottom_x = np.polyval(left_fit, self.__image_height)
@@ -230,8 +278,14 @@ class LaneDetect():
 		x_offset_pixel = 1.0*(left_bottom_x + right_bottom_x - self.__image_width)/2
 		
 		distance_from_center = x_offset_pixel * self.__xmPerPixel;
-	
-		return distance_from_center,angle
+		
+		if (left_angle-right_angle)*180.0/math.pi >5.0 or distance_from_center > 0.5:
+			print('two angle diff or distance_from_center is too big')
+			validity = False
+		else:
+			validity = True
+
+		return distance_from_center,angle,validity
 
 	def draw_area(self,undist,left_fit,right_fit):
 	
@@ -274,42 +328,14 @@ class LaneDetect():
 		angle_text="angle is %.3f"%(angle*180/math.pi)
 		cv2.putText(img,angle_text,(100,200),font,1,(255,0,255),2)
 		return img
-
-	#-----------------------------------------main process----------------------------------#
-	#---------------------------------------------------------------------------------------#
-	def processing(self,frame):
-		
-		thresholded_wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-
-		thresholded = self.thresholding(thresholded_wraped)
-
-		#cv2.imshow("thresholded",thresholded)
-		#cv2.waitKey(1)
-		
-		if self.__left_line.detected and self.__right_line.detected:
-			left_fit, right_fit = self.find_line_by_previous(thresholded)
-		else:
-			left_fit, right_fit = self.find_line(thresholded)
-
-		pos_from_center,angle = self.calculate_lane_state(left_fit, right_fit)
-		
-		area_img = self.draw_area(frame,left_fit,right_fit)
-		result = self.draw_values(area_img,pos_from_center,angle)
-	
-		cv2.imshow("result",result)
-		cv2.waitKey(1)
-
-		msg = Lane()
-		msg.offset = -pos_from_center
-		msg.theta = angle
-		return msg
-
 class image_converter:
 	def __init__(self):
 		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=1)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber("/image_raw",Image,self.callback)
+		self.srv = Server(lane_detectConfig, callback)
 		self.lane_detect_method = LaneDetect()
+		self.lane_detect_method.setDebug(True)
 		
 	def callback(self,data):
 		try:
@@ -317,11 +343,13 @@ class image_converter:
 		except CvBridgeError as e:
 			print(e)
 			return 
-
 		lane_msg = self.lane_detect_method.processing(frame)
-
 		self.image_pub.publish(lane_msg)
-
+		
+	def callback(config, level):
+		self.lane_detect_method.set = config.
+	
+	
 
 def main(args):
 	ic = image_converter()
