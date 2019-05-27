@@ -93,14 +93,21 @@ class LaneDetect():
 		self.__ymPerpixel = 8.60/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
-		self.__sobel_thresh_x = (35,100)
+		self.__sobel_thresh_x = (27,100)
 		self.__sobel_thresh_y = ()
 		self.__h_thresh = ()
-		self.__l_thresh = (80,200)
+		self.__l_thresh = (150,224)
 		self.__s_thresh = (180,255)
 		
 		self.__debug = False
-		
+	
+	def setThreshold(self,config):
+		self.__sobel_thresh_x = (config.x_sobel_thresh_min,config.x_sobel_thresh_max)
+		self.__sobel_thresh_y = (config.y_sobel_thresh_min,config.y_sobel_thresh_max)
+		self.__h_thresh = (config.h_thresh_min,config.h_thresh_max)
+		self.__l_thresh = (config.l_thresh_min,config.l_thresh_max)
+		self.__s_thresh = (config.s_thresh_min,config.s_thresh_max)
+	
 	def setDebug(self,status):
 		self.__debug = status
 		
@@ -330,30 +337,33 @@ class LaneDetect():
 		return img
 class image_converter:
 	def __init__(self):
-		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=1)
-		self.bridge = CvBridge()
-		self.image_sub = rospy.Subscriber("/image_raw",Image,self.callback)
-		self.srv = Server(lane_detectConfig, callback)
 		self.lane_detect_method = LaneDetect()
 		self.lane_detect_method.setDebug(True)
 		
-	def callback(self,data):
+		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=1)
+		self.bridge = CvBridge()
+		self.image_sub = rospy.Subscriber("/image_raw",Image,self.image_callback)
+		self.srv = Server(lane_detectConfig, self.config_callback)
+		
+		
+	def image_callback(self,rosImage):
 		try:
-			frame = self.bridge.imgmsg_to_cv2(data, "bgr8")
+			frame = self.bridge.imgmsg_to_cv2(rosImage, "bgr8")
 		except CvBridgeError as e:
 			print(e)
 			return 
 		lane_msg = self.lane_detect_method.processing(frame)
 		self.image_pub.publish(lane_msg)
 		
-	def callback(config, level):
-		self.lane_detect_method.set = config.
+	def config_callback(self,config, level):
+		self.lane_detect_method.setThreshold(config)
+		return config
 	
 	
 
 def main(args):
-	ic = image_converter()
 	rospy.init_node('lane_detect')
+	ic = image_converter()
 	try:
 		rospy.spin()
 	except KeyboardInterrupt:
