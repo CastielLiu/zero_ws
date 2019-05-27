@@ -4,8 +4,8 @@
 
 LaneKeeping::LaneKeeping()
 {
-	cmd_.speed = 0.0;
-	cmd_.steering_angle = 0.0;
+	cmd_.set_speed = 0.0;
+	cmd_.set_steeringAngle = 0.0;
 }
 
 LaneKeeping::~LaneKeeping()
@@ -20,10 +20,11 @@ bool LaneKeeping::init()
 	
 	nh_private.param<float>("foresight_distance",foresight_distance_,2.0);
 	nh_private.param<float>("lane_keeping_speed",lane_keeping_speed_,1.0);
+	nh_private.param<std::string>("cmd_topic_name",cmd_topic_name_,"/cmd");
 	
 	sub_laneMsg_ = nh.subscribe("/lane",1,&LaneKeeping::laneDetect_callback,this);
 	
-	pub_controlCmd_ = nh.advertise<driverless_msgs::ControlCmd>("/cmd",2);
+	pub_controlCmd_ = nh.advertise<driverless_msgs::ControlCmd>(cmd_topic_name_,2);
 }
 
 void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg)
@@ -34,7 +35,7 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 		return ;
 	}
 	
-	float alpha = asin(msg->offset *cos(msg->theta) / foresight_distance_) ;
+	float alpha = asin(msg->offset *cos(msg->theta) / foresight_distance_);
 	
 	float delta = fabs(msg->theta) - fabs(alpha);
 	
@@ -44,9 +45,9 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 	
 	float angle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
 		
-	cmd_.steering_angle = fabs(angle) * get_steeringDir(msg->offset, msg->theta,alpha);
+	cmd_.set_steeringAngle = fabs(angle) * get_steeringDir(msg->offset, msg->theta,alpha);
 	
-	cmd_.speed = lane_keeping_speed_;
+	cmd_.set_speed = lane_keeping_speed_;
 	
 	pub_controlCmd_.publish(cmd_);
 	

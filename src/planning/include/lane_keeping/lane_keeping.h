@@ -33,6 +33,8 @@ private:
 	
 	driverless_msgs::Lane lane_msg_;
 	driverless_msgs::ControlCmd cmd_;
+	
+	std::string cmd_topic_name_;
 
 };
 

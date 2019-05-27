@@ -3,9 +3,9 @@
 
 	<arg name="max_speed"  default="2.0"/>
 	
-	
+	<node name="lane_detect_node" pkg="lane_detect" type="lane_detect.py" />
 	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node">
-	
+		<param name="cmd_topic_name" value="/sensor_decision"/>
 	</node>
 
 

@@ -1,3 +1,3 @@
 
-float32 speed
-float32 steering_angle
+float32 set_speed
+float32 set_steeringAngle
