@@ -23,7 +23,7 @@
 uint8_t stm32_data_buf[STM32_MAX_LOAD_SIZE];
 uint8_t stm32_pkg_buf[STM32_MAX_PKG_BUF_LEN];
 
-enum{HeaderByte0=0x66,HeaderByte1=0xCC};
+enum{Stm32MsgHeaderByte0=0x66,Stm32MsgHeaderByte1=0xCC};
 
 PACK(
 typedef struct 

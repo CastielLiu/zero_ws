@@ -46,7 +46,9 @@ typedef struct
 	uint8_t header1;
 	uint8_t pkgLen;
 	uint8_t id;
-	
+	uint16_t speed;
+	uint16_t steeringAngle;
+	uint8_t reserved;
 	uint8_t checkNum;
 	
 }) readPkg_t;

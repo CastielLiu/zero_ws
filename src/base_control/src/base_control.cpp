@@ -81,8 +81,8 @@ bool BaseControl::init(int argc,char**argv)
 
 void BaseControl::run()
 {
-	//readFromStm32_thread_ptr_ = boost::shared_ptr<boost::thread > 
-	//	(new boost::thread(boost::bind(&BaseControl::read_stm32_port, this)));
+	readFromStm32_thread_ptr_ = boost::shared_ptr<boost::thread > 
+		(new boost::thread(boost::bind(&BaseControl::read_stm32_port, this)));
 		
 	ros::spin();
 }
@@ -110,9 +110,9 @@ void BaseControl::read_stm32_port()
     	}
     	if(len == 0) continue;
     	
-    	 //for(int i=0;i<len;i++)
-    	 //	printf("%x\t",stm32_data_buf[i]);
-    	 //std::cout << std::endl;
+    	 for(int i=0;i<len;i++)
+    		 printf("%x\t",stm32_data_buf[i]);
+    	 std::cout << std::endl;
     	
 		Stm32BufferIncomingData(stm32_data_buf, len);
 	}
@@ -142,10 +142,7 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 				break;
 			case 1:
 				if(message[ii]==Stm32MsgHeaderByte1)
-				{
 					stm32_pkg_buf[buffer_index++] = message[ii];
-					bytes_remaining =2; //2 bytes pkgLen
-				}
 				else
 				{
 					buffer_index = 0;
@@ -153,20 +150,12 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 				}
 				break;
 			case 2:
-			case 3:
 				stm32_pkg_buf[buffer_index++]=message[ii];
-				bytes_remaining --;
-				if(bytes_remaining == 0)
-				{
-					bytes_remaining = (stm32_pkg_buf[2] << 8) + stm32_pkg_buf[3] ;
-					
-					//根据实际发送的包长最大小值进行限定(多重数据正确保障) 
-					if(bytes_remaining > 9 || bytes_remaining < 2)  
-					{
-						buffer_index = 0;
-						break;
-					}
-				}
+
+				bytes_remaining = stm32_pkg_buf[2];
+				//根据实际发送的包长最大小值进行限定(多重数据正确保障) 
+				if(bytes_remaining > 10 || bytes_remaining < 2)  
+					buffer_index = 0;
 				break;
 			default:
 				stm32_pkg_buf[buffer_index++] = message[ii];
@@ -184,16 +173,21 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 void BaseControl::parse_stm32_msgs(unsigned char *msg)
 {
 	unsigned char pkgId = msg[3];
-	if(pkgId == 0x01)
+	if(pkgId == 0x00)
 	{
 		readPkg_t *read_pkg = (readPkg_t *)msg;
 		if(read_pkg->checkNum != generateCheckNum(read_pkg,sizeof(read_pkg)))
 		{
-			//ROS_ERROR("check error %x != %x",msg->checkNum,generateCheckNum(stm32_pkg_buf,ntohs(msg->pkgLen)+4));
+			ROS_ERROR("check error");
 			return ;
 		}
-			
-	
+		
+		float speed = 0.01*(read_pkg->speed-65535/2);
+		float steeringAngle = 0.01*(read_pkg->steeringAngle-65535/2);
+		if(write_msg_.speed != speed || steeringAngle!= write_msg_.steeringAngle)
+			ROS_ERROR("data error");
+		else
+			ROS_INFO("right");
 	}
 }
 
@@ -214,9 +208,9 @@ void BaseControl::cmd_callback(const driverless_msgs::ControlCmd::ConstPtr& cmd)
 	
 	stm32_serial_port_->write((uint8_t *)&write_msg_,sizeof(write_msg_));
 	
-	printf("%d\t%d\r\n",write_msg_.speed,write_msg_.steeringAngle);
+	//printf("%d\t%d\r\n",write_msg_.speed,write_msg_.steeringAngle);
 	
-	printCmdBytes((uint8_t *)&write_msg_,sizeof(write_msg_));
+	//printCmdBytes((uint8_t *)&write_msg_,sizeof(write_msg_));
 }
 
 uint8_t BaseControl::generateCheckNum(const void* buf,size_t len)
