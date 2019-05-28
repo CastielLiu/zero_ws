@@ -45,7 +45,7 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 	
 	float angle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
 		
-	cmd_.set_steeringAngle = fabs(angle) * get_steeringDir(msg->offset, msg->theta,alpha);
+	cmd_.set_steeringAngle = -fabs(angle) * get_steeringDir(msg->offset, msg->theta,alpha);
 	
 	cmd_.set_speed = lane_keeping_speed_;
 	

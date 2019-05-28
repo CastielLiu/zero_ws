@@ -75,12 +75,12 @@ class LaneDetect():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 209				##@param
-		self.__offset = 150 #pixel
-		self.__A = (0,420)					##@param
-		self.__B = (298,self.__cut_height)	##@param
-		self.__C = (369,self.__cut_height)	##@param
-		self.__D = (639,420)				##@param
+		self.__cut_height = 229				##@param
+		self.__offset = 50 #pixel
+		self.__A = (91,478)					##@param
+		self.__B = (301,self.__cut_height)	##@param
+		self.__C = (396,self.__cut_height)	##@param
+		self.__D = (575,478)				##@param
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -89,15 +89,15 @@ class LaneDetect():
 		self.__dstPoints = np.float32([self.__A_,self.__B_,self.__C_,self.__D_])
 		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
-		self.__xmPerPixel = 1.0/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 8.60/(self.__D_[1]-self.__C_[1])	##@param
+		self.__xmPerPixel = 0.9/(self.__D_[0]-self.__A_[0])		##@param
+		self.__ymPerpixel = 4.40/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
-		self.__sobel_thresh_x = (27,100)
+		self.__sobel_thresh_x = (54,,255)
 		self.__sobel_thresh_y = ()
 		self.__h_thresh = ()
-		self.__l_thresh = (150,224)
-		self.__s_thresh = (180,255)
+		self.__l_thresh = (120,255)
+		self.__s_thresh = (0,255)
 		
 		self.__debug = False
 	
@@ -170,7 +170,7 @@ class LaneDetect():
 		else:
 			left_fit, right_fit = self.find_line(thresholded)
 
-		pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
+		lane_width,pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
 		
 		area_img = self.draw_area(frame,left_fit,right_fit)
 		result = self.draw_values(area_img,pos_from_center,angle)
@@ -179,6 +179,7 @@ class LaneDetect():
 			
 		msg = Lane()
 		msg.validity = validity
+		msg.lane_width = lane_width
 		msg.offset = -pos_from_center
 		msg.theta = angle
 		return msg
@@ -284,6 +285,8 @@ class LaneDetect():
 	
 		x_offset_pixel = 1.0*(left_bottom_x + right_bottom_x - self.__image_width)/2
 		
+		lane_width = (right_bottom_x - left_bottom_x) * self.__xmPerPixel;
+		
 		distance_from_center = x_offset_pixel * self.__xmPerPixel;
 		
 		if (left_angle-right_angle)*180.0/math.pi >5.0 or distance_from_center > 0.5:
@@ -292,7 +295,7 @@ class LaneDetect():
 		else:
 			validity = True
 
-		return distance_from_center,angle,validity
+		return lane_width,distance_from_center,angle,validity
 
 	def draw_area(self,undist,left_fit,right_fit):
 	
@@ -342,7 +345,7 @@ class image_converter:
 		
 		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=1)
 		self.bridge = CvBridge()
-		self.image_sub = rospy.Subscriber("/image_raw",Image,self.image_callback)
+		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
 		self.srv = Server(lane_detectConfig, self.config_callback)
 		
 		
