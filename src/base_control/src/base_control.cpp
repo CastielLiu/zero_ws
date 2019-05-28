@@ -101,7 +101,7 @@ void BaseControl::read_stm32_port()
 		{
 			len = stm32_serial_port_->read(stm32_data_buf, STM32_MAX_LOAD_SIZE);
 			//ROS_INFO("read_stm32_port get %d bytes",len);
-		} 
+		}
 		catch (std::exception &e) 
 		{
 			std::stringstream output;
@@ -181,7 +181,7 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 			ROS_ERROR("check error");
 			return ;
 		}
-		
+		/*
 		uint16_t speed = read_pkgPtr->speed;
 		uint16_t steeringAngle = read_pkgPtr->steeringAngle;
 		if(write_msg_.speed != speed || steeringAngle != write_msg_.steeringAngle)
@@ -191,6 +191,7 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 		}
 		else
 			ROS_INFO("right");
+		*/
 	}
 }
 
