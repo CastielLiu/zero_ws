@@ -39,11 +39,11 @@ static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int bau
 BaseControl::BaseControl()
 {
 	stm32_serial_port_ = NULL;
+
+	write_msg_.header0 = Stm32MsgHeaderByte0;
+	write_msg_.header1 = Stm32MsgHeaderByte1;
 	write_msg_.reserved = 0x00;
-	
-    write_msg_.header0 = Stm32MsgHeaderByte0;
-    write_msg_.header1 = Stm32MsgHeaderByte1;
-    
+
 }
 
 BaseControl::~BaseControl()
@@ -104,16 +104,16 @@ void BaseControl::read_stm32_port()
 		} 
 		catch (std::exception &e) 
 		{
-	        std::stringstream output;
-	        output << "Error reading from serial port: " << e.what();
-	        std::cout << output.str() <<std::endl;
-    	}
-    	if(len == 0) continue;
-    	
-    	 for(int i=0;i<len;i++)
-    		 printf("%x\t",stm32_data_buf[i]);
-    	 std::cout << std::endl;
-    	
+			std::stringstream output;
+			output << "Error reading from serial port: " << e.what();
+			std::cout << output.str() <<std::endl;
+		}
+		if(len == 0) continue;
+
+		/*for(int i=0;i<len;i++)
+			printf("%x\t",stm32_data_buf[i]);
+		std::cout << len << std::endl;*/
+		
 		Stm32BufferIncomingData(stm32_data_buf, len);
 	}
 }
@@ -129,7 +129,7 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 		if(buffer_index >= STM32_MAX_PKG_BUF_LEN)
 		{
 			buffer_index = 0;
-			  printf("Overflowed receive buffer. Buffer cleared.");
+			printf("Overflowed receive buffer. Buffer cleared.");
 		}
 		switch(buffer_index)
 		{
@@ -175,17 +175,20 @@ void BaseControl::parse_stm32_msgs(unsigned char *msg)
 	unsigned char pkgId = msg[3];
 	if(pkgId == 0x00)
 	{
-		readPkg_t *read_pkg = (readPkg_t *)msg;
-		if(read_pkg->checkNum != generateCheckNum(read_pkg,sizeof(read_pkg)))
+		readPkg_t *read_pkgPtr = (readPkg_t *)msg;
+		if(read_pkgPtr->checkNum != generateCheckNum(read_pkgPtr,sizeof(readPkg_t)))
 		{
 			ROS_ERROR("check error");
 			return ;
 		}
 		
-		float speed = 0.01*(read_pkg->speed-65535/2);
-		float steeringAngle = 0.01*(read_pkg->steeringAngle-65535/2);
-		if(write_msg_.speed != speed || steeringAngle!= write_msg_.steeringAngle)
-			ROS_ERROR("data error");
+		uint16_t speed = read_pkgPtr->speed;
+		uint16_t steeringAngle = read_pkgPtr->steeringAngle;
+		if(write_msg_.speed != speed || steeringAngle != write_msg_.steeringAngle)
+		{
+			ROS_ERROR("data error!!");
+			printf("%d\t%d\t\t%d\t%d",write_msg_.speed,speed,steeringAngle,write_msg_.steeringAngle);
+		}
 		else
 			ROS_INFO("right");
 	}
@@ -216,13 +219,13 @@ void BaseControl::cmd_callback(const driverless_msgs::ControlCmd::ConstPtr& cmd)
 uint8_t BaseControl::generateCheckNum(const void* buf,size_t len)
 {
 	const uint8_t * ptr = (const uint8_t *)buf;
-    uint8_t sum=0;
+	uint8_t sum=0;
 
-    for(int i=2; i<len-1 ; i++)
-    {
-        sum += ptr[i];
-    }
-    return sum;
+	for(int i=2; i<len-1 ; i++)
+	{
+		sum += ptr[i];
+	}
+	return sum;
 }
 
 
