@@ -75,12 +75,12 @@ class LaneDetect():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 229				##@param
-		self.__offset = 100 #pixel
-		self.__A = (91,478)					##@param
-		self.__B = (301,self.__cut_height)	##@param
-		self.__C = (396,self.__cut_height)	##@param
-		self.__D = (575,478)				##@param
+		self.__cut_height = 100				##@param
+		self.__offset = 200 #pixel
+		self.__A = (1,420)					##@param
+		self.__B = (278,self.__cut_height)	##@param
+		self.__C = (412,self.__cut_height)	##@param
+		self.__D = (635,420)				##@param
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -90,7 +90,7 @@ class LaneDetect():
 		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
 		self.__xmPerPixel = 0.9/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 4.40/(self.__D_[1]-self.__C_[1])	##@param
+		self.__ymPerpixel = 3.45/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
 		self.__sobel_thresh_x = (54,255)
@@ -154,7 +154,7 @@ class LaneDetect():
 		if self.__debug:
 			cv2.imshow('x_thresh',x_thresh)
 			cv2.imshow('hls_thresh_white',hls_thresh_white)
-			cv2.imshow('hls_thresh_yellow',hls_thresh_yellow)
+			#cv2.imshow('hls_thresh_yellow',hls_thresh_yellow)
 			cv2.imshow("thresholded",thresholded)
 		
 		return thresholded
@@ -343,10 +343,10 @@ class image_converter:
 		self.lane_detect_method = LaneDetect()
 		#self.lane_detect_method.setDebug(True)
 		
-		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=1)
+		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=0)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
-		#self.srv = Server(lane_detectConfig, self.config_callback)
+		self.srv = Server(lane_detectConfig, self.config_callback)
 		
 		
 	def image_callback(self,rosImage):

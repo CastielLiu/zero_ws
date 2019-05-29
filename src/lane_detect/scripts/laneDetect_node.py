@@ -15,7 +15,7 @@ class LaneDetect_node():
 		self.lane_msg = Lane()
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=1)
 		self.bridge = CvBridge()
-		self.sub_image = rospy.Subscriber("/image_raw",Image,self.image_callback)
+		self.sub_image = rospy.Subscriber("/image_rectified",Image,self.image_callback)
 		self.lane_detect = LaneDetect()
 		self.lane_detect.set_debug(True)
 		
@@ -44,7 +44,7 @@ class LaneDetect_node():
 			return
 		self.lane_msg.validity = True
 		self.lane_msg.lane_width = laneMsg[0]
-		self.lane_msg.offset = laneMsg[1]
+		self.lane_msg.offset = -laneMsg[1]
 		self.lane_msg.theta = laneMsg[2]
 		self.pub_lane_msg.publish(self.lane_msg)
 		

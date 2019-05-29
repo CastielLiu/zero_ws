@@ -71,12 +71,12 @@ class Parameters():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 102
-		self.__offset = 100 #pixel
-		self.__A = (3,446)
-		self.__B = (241,102)
-		self.__C = (329,102)
-		self.__D = (638,446)
+		self.__cut_height = 100				##@param
+		self.__offset = 200 #pixel
+		self.__A = (1,420)					##@param
+		self.__B = (278,self.__cut_height)	##@param
+		self.__C = (412,self.__cut_height)	##@param
+		self.__D = (635,420)				##@param
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -86,7 +86,7 @@ class Parameters():
 		self.__transform_M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__transform_Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
 		self.__xmPerPixel = 1.0/(self.__D_[0]-self.__A_[0])
-		self.__ymPerpixel = 8.60/(self.__D_[1]-self.__C_[1])
+		self.__ymPerpixel = 3.45/(self.__D_[1]-self.__C_[1])
 		
 		print(self.__xmPerPixel,self.__ymPerpixel)
 		

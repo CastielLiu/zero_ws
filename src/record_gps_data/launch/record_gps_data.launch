@@ -3,14 +3,13 @@
 
 
 
-
      <node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node" output="screen">
-		<param name="path_points_file" value="/home/huang/zero_ws/src/gps_data/gps_data_2.txt"/>
+		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/gps_data.txt"/>
 	 </node>
 	
-	<node name="nuogeng_gps_node" pkg="nuogeng_gps" type ="nuogeng_gps_node" output="screen" >
+	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
 	
-		<param name ="gps_port_name"   value="/dev/ttyUSB1"/>
+		<param name ="port_name"   value="/dev/ttyUSB1"/>
 		<param name ="baudrate"    value="115200"/>
 	</node>
 	

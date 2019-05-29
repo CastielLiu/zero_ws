@@ -120,6 +120,11 @@ void BaseControl::read_stm32_port()
 
 void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int length)
 {
+	if(message[0] == 1)
+		ROS_INFO("STM32 heared command...");
+	else
+		ROS_INFO("STM32 not heared command...");
+/*
 	static int buffer_index = 0;
 	static int bytes_remaining =0;
 	
@@ -168,6 +173,7 @@ void BaseControl::Stm32BufferIncomingData(unsigned char *message, unsigned int l
 				break;
 		}
 	}// end for
+	*/
 }
 
 void BaseControl::parse_stm32_msgs(unsigned char *msg)

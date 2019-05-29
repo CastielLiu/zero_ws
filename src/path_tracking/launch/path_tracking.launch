@@ -3,10 +3,10 @@
 
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="/home/huang/zero_ws/src/gps_data/gps_data_3.txt"/>
+		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/2.txt"/>
         <param name="vehicle_axis_dis" value="0.65"/>
-		<param name="disThreshold" value="1.0"/>
-		<param name="speed" value="1.0"/>
+		<param name="disThreshold" value="1.4"/>
+		<param name="speed" value="2.2"/>
     </node>
 
 	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
@@ -16,11 +16,12 @@
 	</node>
 	
 	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
-		<param name="path_points_file" value="/home/huang/zero_ws/src/gps_data/debug.txt"/>
+		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/debug.txt" />
 	</node>
 
 
     <node type="base_control_node" pkg ="base_control" name="base_control_node" >
+    	<param name ="stm32_port_name"   value="/dev/ttyUSB2"/>
     </node>
       
 </launch>

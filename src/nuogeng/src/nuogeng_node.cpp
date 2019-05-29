@@ -138,15 +138,15 @@ void Nuogeng::parseMessage()
 {
 	inspax.header.stamp = ros::Time::now();
 	inspax.header.frame_id = "gps";
-	inspax.latitude = gpsPtr->latitude;
-	inspax.longitude = gpsPtr->longitude;
+	inspax.latitude = gpsPtr->latitude *180.0/M_PI;
+	inspax.longitude = gpsPtr->longitude *180.0/M_PI;
 	inspax.height = gpsPtr->height;
 	inspax.north_velocity = gpsPtr->north_velocity;
 	inspax.east_velocity = gpsPtr->east_velocity;
 	inspax.up_velocity = gpsPtr->down_velocity;
 	inspax.roll = gpsPtr->roll;
 	inspax.pitch = gpsPtr->pitch;
-	inspax.azimuth = gpsPtr->yaw;
+	inspax.azimuth = gpsPtr->yaw *180.0/M_PI;
 	inspax.latitude_standard_deviation = gpsPtr->latitude_std_deviation;
 	inspax.longitude_standard_deviation = gpsPtr->longitude_std_deviation;
 	inspax.height_standard_deviation = gpsPtr->height_std_deviation;

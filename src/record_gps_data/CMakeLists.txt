@@ -6,13 +6,12 @@ project(record_gps_data)
 
 
 find_package(catkin REQUIRED COMPONENTS
-  little_ant_msgs
   roscpp
   rospy
   std_msgs
   gps_msgs
   serial
-  jsk_recognition_msgs
+  
 )
 
 
