@@ -18,7 +18,7 @@ bool LaneKeeping::init()
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	
-	nh_private.param<float>("foresight_distance",foresight_distance_,1.6);
+	nh_private.param<float>("foresight_distance",foresight_distance_,1.0);
 	nh_private.param<float>("lane_keeping_speed",lane_keeping_speed_,1.0);
 	nh_private.param<std::string>("cmd_topic_name",cmd_topic_name_,"/cmd");
 	

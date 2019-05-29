@@ -76,7 +76,7 @@ class LaneDetect():
 		self.__image_height = 480
 		self.__image_width = 640
 		self.__cut_height = 229				##@param
-		self.__offset = 100 #pixel
+		self.__offset = 50 #pixel
 		self.__A = (91,478)					##@param
 		self.__B = (301,self.__cut_height)	##@param
 		self.__C = (396,self.__cut_height)	##@param
