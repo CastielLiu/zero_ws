@@ -1,0 +1,26 @@
+<!-- -->
+<launch>
+
+	
+	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
+		<param name="path_points_file" value="/home/huang/zero_ws/src/gps_data/gps_data_3.txt"/>
+        <param name="vehicle_axis_dis" value="0.65"/>
+		<param name="disThreshold" value="1.0"/>
+		<param name="speed" value="1.0"/>
+    </node>
+
+	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
+	
+		<param name ="port_name"   value="/dev/ttyUSB1"/>
+		<param name ="baudrate"    value="115200"/>
+	</node>
+	
+	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
+		<param name="path_points_file" value="/home/huang/zero_ws/src/gps_data/debug.txt"/>
+	</node>
+
+
+    <node type="base_control_node" pkg ="base_control" name="base_control_node" >
+    </node>
+      
+</launch>
