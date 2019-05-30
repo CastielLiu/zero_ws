@@ -9,17 +9,15 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
-count = 0
-imagePath = '/home/wendao/projects/zero_ws/src/lane_detect/scripts/image/'
+count = 425
+imagePath = '/home/wuconglei/a_wendao/zero_ws/src/lane_detect/scripts/image/'
 
-class LaneDetect():
+class SaveImage():
 	
 	def __init__(self):
 		rospy.init_node('save_image')
-		self.lane_msg = Lane()
-		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=1)
 		self.bridge = CvBridge()
-		self.sub_image = rospy.Subscriber("/image_raw",Image,self.image_callback)
+		self.sub_image = rospy.Subscriber("/image_rectified",Image,self.image_callback)
 		
 	def run(self):
 		rospy.spin()
@@ -30,13 +28,17 @@ class LaneDetect():
 			frame = self.bridge.imgmsg_to_cv2(image, "bgr8")
 		except CvBridgeError as e:
 			print(e)
-		
-		cv2.imwrite(imagePath + str(count)+'.jpg',frame)
+		file_name = imagePath + str(count)+'.jpg'
+		status = cv2.imwrite(file_name, frame)
+		if status:
+			print(file_name+' saved')
+		else:
+			print('save image failed!!')
 		count = count+1
 		
 def main():
-	_lane_detect = LaneDetect()
-	_lane_detect.run()
+	save_image = SaveImage()
+	save_image.run()
 	
 if __name__ == '__main__':
 	main()
