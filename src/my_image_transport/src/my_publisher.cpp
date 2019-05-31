@@ -64,6 +64,9 @@ int main(int argc, char** argv)
 	std::string calibration_file_path;
 	nh_private.param<std::string>("calibration_file_path",calibration_file_path,"a.yaml");
 	
+	int frame_rate_;
+	nh_private.param<int>("frame_rate",frame_rate_,30);
+	
 	ROS_INFO("%s",calibration_file_path.c_str());
 	
 	cv::Mat camera_instrinsics;
@@ -102,8 +105,8 @@ int main(int argc, char** argv)
 	cv::Mat frame,src;
 	sensor_msgs::ImagePtr msg;
 
-	ros::Rate loop_rate(30);
-	while (nh.ok()) 
+	ros::Rate loop_rate(frame_rate_);
+	while (nh.ok())
 	{
 		cap >> frame;
 		//cv::flip(src,frame,-1); //将摄像头图像翻转一次再发布

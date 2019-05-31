@@ -141,20 +141,61 @@ class LaneDetect():
 			binary_output[(channel > self.__s_thresh[0]) & (channel <= self.__s_thresh[1])] = 255
 		return binary_output
 		
+	def dir_threshold(img, sobel_kernel=3, thresh=(0, np.pi/2)):
+		gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+		# Calculate the x and y gradients
+		sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
+		sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
+		# Take the absolute value of the gradient direction,
+		# apply a threshold, and create a binary image result
+		absgraddir = np.arctan2(np.absolute(sobely), np.absolute(sobelx))
+		binary_output = np.zeros_like(absgraddir)
+		binary_output[(absgraddir >= thresh[0]) & (absgraddir <= thresh[1])] = 255
+		# Return the binary image
+		return binary_output
+		
+	def mag_threshold(img, sobel_kernel=3, mag_thresh=(0, 255)):
+		gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+		# Take both Sobel x and y gradients
+		sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel)
+		sobely = cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel)
+		# Calculate the gradient magnitude
+		gradmag = np.sqrt(sobelx ** 2 + sobely ** 2)
+		# Rescale to 8 bit
+		scale_factor = np.max(gradmag) / 255
+		gradmag = (gradmag / scale_factor).astype(np.uint8)
+		# Create a binary image of ones where threshold is met, zeros otherwise
+		binary_output = np.zeros_like(gradmag)
+		binary_output[(gradmag >= mag_thresh[0]) & (gradmag <= mag_thresh[1])] = 255
+		return binary_output
+		
+	def luv_select(img, thresh=(0, 255)):
+		luv = cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
+		l_channel = luv[:, :, 0]
+		binary_output = np.zeros_like(l_channel)
+		binary_output[(l_channel > thresh[0]) & (l_channel <= thresh[1])] = 255
+		return binary_output
+
+	def lab_select(img, thresh=(0, 255)):
+		lab = cv2.cvtColor(img, cv2.COLOR_RGB2Lab)
+		b_channel = lab[:,:,2]
+		binary_output = np.zeros_like(b_channel)
+		binary_output[(b_channel > thresh[0]) & (b_channel <= thresh[1])] = 255
+		return binary_output
+	
+		
 	def thresholding(self,img):
 		x_thresh = self.abs_sobel_thresh(img, orient='x')
 	
-		#cv2.imshow("scaled_sobel",binary_output)
-		hls_thresh_white = self.hls_select(img,channel='l')
-		hls_thresh_yellow = self.hls_select(img,channel='s')
-		#cv2.imshow("scaled_sobel",hls_thresh_yellow)
+		hls_thresh_l = self.hls_select(img,channel='l')
+		hls_thresh_s = self.hls_select(img,channel='s')
 		thresholded = np.zeros_like(x_thresh)
-		thresholded[(hls_thresh_white == 255) & (hls_thresh_yellow == 255) | (x_thresh == 255) ]=255
+		thresholded[(hls_thresh_l == 255) & (hls_thresh_s == 255) | (x_thresh == 255) ]=255
 		
 		if self.__debug:
 			cv2.imshow('x_thresh',x_thresh)
-			cv2.imshow('hls_thresh_white',hls_thresh_white)
-			#cv2.imshow('hls_thresh_yellow',hls_thresh_yellow)
+			cv2.imshow('hls_thresh_l',hls_thresh_l)
+			cv2.imshow('hls_thresh_s',hls_thresh_s)
 			cv2.imshow("thresholded",thresholded)
 		
 		return thresholded

@@ -5,6 +5,7 @@
 
 	<node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen" args="$(arg camera_num)" >
 		<param name ="calibration_file_path" value="$(find my_image_transport)/calibration_file/1.yaml"/>
+		<param name ="frame_rate" value="30"/>
 	</node>
 
 </launch>
