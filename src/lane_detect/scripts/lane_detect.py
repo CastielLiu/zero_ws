@@ -75,12 +75,12 @@ class LaneDetect():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 100				##@param
+		self.__cut_height = 120				##@param
 		self.__offset = 200 #pixel
-		self.__A = (1,420)					##@param
-		self.__B = (278,self.__cut_height)	##@param
-		self.__C = (412,self.__cut_height)	##@param
-		self.__D = (635,420)				##@param
+		self.__A = (3,320)					##@param
+		self.__B = (261,self.__cut_height)	##@param
+		self.__C = (381,self.__cut_height)	##@param
+		self.__D = (632,320)				##@param
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -89,15 +89,15 @@ class LaneDetect():
 		self.__dstPoints = np.float32([self.__A_,self.__B_,self.__C_,self.__D_])
 		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
-		self.__xmPerPixel = 0.9/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 3.45/(self.__D_[1]-self.__C_[1])	##@param
+		self.__xmPerPixel = 1.49/(self.__D_[0]-self.__A_[0])		##@param
+		self.__ymPerpixel = 5.8/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
-		self.__sobel_thresh_x = (54,255)
+		self.__sobel_thresh_x = (57,255)
 		self.__sobel_thresh_y = ()
 		self.__h_thresh = ()
-		self.__l_thresh = (120,255)
-		self.__s_thresh = (0,255)
+		self.__l_thresh = (215,255)
+		self.__s_thresh = (164,255)
 		
 		self.__debug = False
 	
@@ -387,7 +387,7 @@ class image_converter:
 		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=0)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
-		self.srv = Server(lane_detectConfig, self.config_callback)
+		#self.srv = Server(lane_detectConfig, self.config_callback)
 		
 		
 	def image_callback(self,rosImage):

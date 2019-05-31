@@ -13,7 +13,7 @@
 
 
 #define WHEEL_DISTANCE  0.4
-#define AXIS_DISTANCE   0.5
+#define AXIS_DISTANCE   0.7
 #define MAX_SPEED 5.0
 
 
