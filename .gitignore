@@ -1,5 +1,5 @@
 devel/
 build/
-.catkin_workspace
-.cpp~
-.h~
+*.catkin_workspace
+*.cpp~
+*.h~
