@@ -37,41 +37,21 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 	
 	float alpha = asin(msg->offset *cos(msg->theta) / foresight_distance_);
 	
-	float delta = fabs(msg->theta) - fabs(alpha);
-	
-	//ROS_INFO("alpha:%f\t theta:%f \t delta:%f",alpha*180.0/M_PI,lane_msg_.included_angle*180.0/M_PI,delta*180.0/M_PI);
+	//float delta = getDelta(alpha,msg->theta);
+	float delta = -msg->theta -alpha;
 	
 	float steering_radius = 0.5*foresight_distance_ / sin(delta) ;
 	
-	float angle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
+	cmd_.set_steeringAngle = saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
 		
-	cmd_.set_steeringAngle = -fabs(angle) * get_steeringDir(msg->offset, msg->theta,alpha);
-	
 	cmd_.set_speed = lane_keeping_speed_;
+	
+	ROS_INFO("theta:%.2f\t alpha:%.2f\t delta:%.2f\t radius:%.2f\t angle:%.2f",
+				rad2deg(msg->theta),rad2deg(alpha),rad2deg(delta),steering_radius,cmd_.set_steeringAngle);
 	
 	pub_controlCmd_.publish(cmd_);
 	
 }
-
-
-//left -1 ; right 1
-int LaneKeeping::get_steeringDir(float err,float theta,float alpha)
-{
-	if(err==0 && theta==0)
-		return 0;
-	else if(err<=0 && theta<=0)
-		return -1;
-	else if(err>=0 && theta>=0)
-		return 1;
-	else if(err<0)
-		return fabs(theta) > fabs(alpha) ? 1:-1;
-	else if(err>0)
-		return fabs(theta) > fabs(alpha) ? -1:1;
-	else
-		return 0;
-}
-
-
 
 
 int main(int argc, char** argv)

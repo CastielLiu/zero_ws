@@ -5,7 +5,7 @@
 	
 	<node name="lane_detect_node" pkg="lane_detect" type="lane_detect.py" />
 	
-	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node">
+	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node" output="screen">
 		<param name="cmd_topic_name" value="/cmd"/>
 		<param name="lane_keeping_speed" value="1.5"/>
 		<param name="foresight_distance" value="2.0"/>

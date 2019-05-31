@@ -20,6 +20,7 @@ public:
 	void laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg);
 
 	
+private:
 	
 private:
 	ros::Subscriber sub_laneMsg_;
