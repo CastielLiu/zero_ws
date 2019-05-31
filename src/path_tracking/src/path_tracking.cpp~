@@ -103,7 +103,6 @@ void PathTracking::run()
 		if( dis_yaw.first < disThreshold_ || dis_yaw.first>1000.0)//初始状态下 target(0,0)-> dis_yaw.first 将会很大
 		{
 			target_point_index_ ++;
-			
 			continue;
 		}
 			
