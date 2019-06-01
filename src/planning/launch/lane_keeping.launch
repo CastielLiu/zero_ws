@@ -3,12 +3,12 @@
 
 	<arg name="max_speed"  default="2.0"/>
 	
-	<node name="lane_detect_node" pkg="lane_detect" type="lane_detect.py" />
+	<node name="lane_detect_node" pkg="lane_detect" type="lane_detect.py" output="screen" />
 	
 	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node" output="screen">
 		<param name="cmd_topic_name" value="/cmd"/>
-		<param name="lane_keeping_speed" value="2.5"/>
-		<param name="foresight_distance" value="3.0"/>
+		<param name="lane_keeping_speed" value="3.0"/>   <!-- 1m/s 3.0m    1.5m/s  4.0m    2.0m/s 4.0m   2.5m/s  5.0m 3.0m/s  5.0m-->
+		<param name="foresight_distance" value="5.0"/>
 		
 	</node>
 	

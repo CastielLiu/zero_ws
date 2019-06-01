@@ -76,7 +76,8 @@ class LaneDetect():
 		self.__image_height = 480
 		self.__image_width = 640
 		self.__cut_height = 120				##@param
-		self.__offset = 200 #pixel
+		self.__draw_y = 378					##@param
+		self.__offset = 150 #pixel
 		self.__A = (3,320)					##@param
 		self.__B = (261,self.__cut_height)	##@param
 		self.__C = (381,self.__cut_height)	##@param
@@ -90,7 +91,7 @@ class LaneDetect():
 		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
 		self.__xmPerPixel = 1.49/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 5.8/(self.__D_[1]-self.__C_[1])	##@param
+		self.__ymPerpixel = 3.63/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
 		self.__sobel_thresh_x = (57,255)
@@ -186,13 +187,17 @@ class LaneDetect():
 		
 	def thresholding(self,img):
 		x_thresh = self.abs_sobel_thresh(img, orient='x')
+		cv2.line(x_thresh,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),10)
+		cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
 	
 		hls_thresh_l = self.hls_select(img,channel='l')
 		hls_thresh_s = self.hls_select(img,channel='s')
 		thresholded = np.zeros_like(x_thresh)
-		thresholded[(hls_thresh_l == 255) & (hls_thresh_s == 255) | (x_thresh == 255) ]=255
+		#thresholded[(hls_thresh_l == 255) & (hls_thresh_s == 255) | (x_thresh == 255) ]=255
+		thresholded[(hls_thresh_l == 255) &  (x_thresh == 255) ]=255
 		
 		if self.__debug:
+			cv2.imshow("top2down",img)
 			cv2.imshow('x_thresh',x_thresh)
 			cv2.imshow('hls_thresh_l',hls_thresh_l)
 			cv2.imshow('hls_thresh_s',hls_thresh_s)
@@ -213,16 +218,17 @@ class LaneDetect():
 
 		lane_width,pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
 		
+		"""
 		area_img = self.draw_area(frame,left_fit,right_fit)
 		result = self.draw_values(area_img,pos_from_center,angle)
 		cv2.imshow("result",result)
 		cv2.waitKey(1)
-			
+		"""
 		msg = Lane()
 		msg.validity = validity
 		msg.lane_width = lane_width
 		msg.offset = -pos_from_center
-		msg.theta = angle
+		msg.theta = angle - 2.6/180.0*np.pi
 		return msg
 		
 	def find_line(self,binary_warped):
@@ -248,7 +254,7 @@ class LaneDetect():
 		# Set the width of the windows +/- margin
 		margin = 100
 		# Set minimum number of pixels found to recenter window
-		minpix = 30
+		minpix = 20
 		# Create empty lists to receive left and right lane pixel indices
 		left_lane_inds = []
 		right_lane_inds = []
@@ -330,8 +336,8 @@ class LaneDetect():
 		
 		distance_from_center = x_offset_pixel * self.__xmPerPixel;
 		
-		if (left_angle-right_angle)*180.0/math.pi >5.0 or distance_from_center > 0.5:
-			print('two angle diff or distance_from_center is too big')
+		if (left_angle-right_angle)*180.0/math.pi >10.0 or distance_from_center > 0.5:
+			print('two angle diff or offset is too big -> left:%.2f\t right:%.2f\t offset:%.2f' %(left_angle*180.0/np.pi,right_angle*180.0/np.pi,distance_from_center))
 			validity = False
 		else:
 			validity = True
@@ -387,7 +393,7 @@ class image_converter:
 		self.image_pub = rospy.Publisher("/lane",Lane,queue_size=0)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
-		#self.srv = Server(lane_detectConfig, self.config_callback)
+		self.srv = Server(lane_detectConfig, self.config_callback)
 		
 		
 	def image_callback(self,rosImage):
