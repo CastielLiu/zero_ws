@@ -34,10 +34,10 @@ class ShowResult:
 		for point in vertex.points:
 			points.append([point.x,point.y])
 		print(points)
-		rect = np.array(points).astype(np.int)
+		rect = np.array([points]).astype(np.int)
 		pure = np.zeros_like(img)
 		cv2.fillPoly(pure, rect, (0, 255, 0))
-		result = cv2.addWeighted(image, 1, pure, 0.3, 0)
+		img = cv2.addWeighted(img, 1, pure, 0.3, 0)
 
 
 	def draw_values(self,img, offset,angle):
@@ -59,7 +59,8 @@ class ShowResult:
 	def lane_vertex_callback(self,vertex):
 		self.draw_area(self.image,vertex)
 		self.draw_values(self.image,self.lane_msg.offset,self.lane_msg.theta)
-	
+		cv2.imshow("result",self.image)
+		cv2.waitKey(1)
 		
 	def image_callback(self,rosImage):
 		try:
