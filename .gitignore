@@ -3,3 +3,5 @@ build/
 *.catkin_workspace
 *.cpp~
 *.h~
+*.py~
+.gitignore~
