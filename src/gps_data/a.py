@@ -5,7 +5,7 @@ import math
 g_longitudes = []
 g_latitudes =[]
 
-with open('2.txt','r') as f:
+with open('gps_data.txt','r') as f:
 	lines = f.readlines()
 	
 for line in lines:

@@ -7,8 +7,8 @@
 	
 	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node" output="screen">
 		<param name="cmd_topic_name" value="/cmd"/>
-		<param name="lane_keeping_speed" value="1.5"/>
-		<param name="foresight_distance" value="2.0"/>
+		<param name="lane_keeping_speed" value="2.5"/>
+		<param name="foresight_distance" value="3.0"/>
 		
 	</node>
 	
