@@ -16,8 +16,7 @@ add_message_files(
     FILES
     Lane.msg
     ControlCmd.msg
-    Point.msg
-    Points.msg
+    TrafficSign.msg
     DrawArea.msg
 )
 

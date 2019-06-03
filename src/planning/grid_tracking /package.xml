@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>path_tracking</name>
+  <name>grid_tracking</name>
   <version>0.0.0</version>
-  <description>The path_tracking package</description>
+  <description>The grid_tracking package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

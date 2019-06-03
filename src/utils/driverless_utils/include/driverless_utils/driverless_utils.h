@@ -1,5 +1,5 @@
-#ifndef ANT_MATH_H_
-#define ANT_MATH_H_
+#ifndef DRIVERLESS_UTILS_H_
+#define DRIVERLESS_UTILS_H_
 
 #include<cstring>
 #include<cmath>
@@ -21,13 +21,22 @@ extern const float g_steering_gearRatio;
 extern const float g_vehicle_width;
 extern const float g_vehicle_length;
 
+typedef struct
+{
+	double longitude;
+	double latitude;
+	float yaw;
+}gpsMsg_t;
+
 
 inline float generateRoadwheelAngleByRadius(const float& radius)
 {
 	assert(radius!=0);
 	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
-	return atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
+	return -atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
 }
+
+
 
 inline double sinDeg(const double& deg)
 {
@@ -60,10 +69,21 @@ inline float rad2deg(float rad)
 	return  rad*180.0/M_PI;
 }
 
+template <typename T>
+inline void saturate_cast(T& value,const T& limit)
+{
+	if(value>limit)
+		value = limit;
+	else if(value<-limit)
+		value = -limit;
+}
+
+bool load_path_points(const std::string& file_path,std::vector<gpsMsg_t>& points);
 
 float limitRoadwheelAngleBySpeed(const float& angle, const float& speed);
 float limitSpeedByPathCurvature(const float& speed,const float& curvature);
-
+float point2point_dis(const gpsMsg_t &point1, const gpsMsg_t &point2);
+std::pair<float, float> get_dis_yaw(const gpsMsg_t &point1, const gpsMsg_t &point2);
 
 
 #endif

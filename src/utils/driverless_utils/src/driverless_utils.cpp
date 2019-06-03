@@ -43,3 +43,48 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 	return speed>max_speed? max_speed: speed;
 }
 
+float point2point_dis(const gpsMsg_t &point1, const gpsMsg_t &point2)
+{
+	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);
+	float y = (point1.latitude - point2.latitude ) *111000;
+	return  sqrt(x * x + y * y);
+}
+
+std::pair<float, float> get_dis_yaw(const gpsMsg_t &point1, const gpsMsg_t &point2)
+{
+	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);
+	float y = (point1.latitude - point2.latitude ) *111000;
+	
+	std::pair<float, float> dis_yaw;
+	dis_yaw.first = sqrt(x * x + y * y);
+	dis_yaw.second = atan2(x,y) *180.0/M_PI;
+	if(dis_yaw.second <0)
+		dis_yaw.second += 360.0;
+	return dis_yaw;
+}
+
+ bool load_path_points(const std::string& file_path,std::vector<gpsMsg_t>& points)
+ {
+	FILE *fp = fopen(file_path.c_str(),"r");
+	
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	
+	gpsMsg_t point;
+	
+	while(!feof(fp))
+	{
+
+		fscanf(fp,"%lf\t%lf\t",&point.longitude,&point.latitude);
+			
+		points.push_back(point);
+	}
+	fclose(fp);
+	
+	return true;
+ }
+
+

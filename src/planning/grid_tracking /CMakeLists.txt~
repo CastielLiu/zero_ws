@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(path_tracking)
+project(grid_tracking)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -12,13 +12,12 @@ find_package(catkin REQUIRED COMPONENTS
   gps_msgs
   serial
   driverless_msgs
-  driverless_utils
 )
 
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES path_tracking
+#  LIBRARIES 
 #  CATKIN_DEPENDS little_ant_msgs roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
@@ -35,6 +34,6 @@ include_directories(
   
 )
 
-add_executable(path_tracking_node src/path_tracking.cpp)
-add_dependencies(path_tracking_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-target_link_libraries(path_tracking_node   ${catkin_LIBRARIES})
+add_executable(${PROJECT_NAME}_node src/${PROJECT_NAME}.cpp)
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_node   ${catkin_LIBRARIES})

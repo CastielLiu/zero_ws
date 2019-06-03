@@ -1,47 +1,64 @@
-#include"path_tracking.h"
+#include"grid_tracking.h"
 
 
-PathTracking::PathTracking()
+GridTracking::GridTracking():
+	path_vertexes_ptr_(NULL)
 {
 	target_point_index_=0;
 	is_gps_ok = false;
-	
 
-	gps_controlCmd_.set_speed =0.0;
+	cmd_.set_speed =0.0;
 
-	gps_controlCmd_.set_steeringAngle=0.0;
+	cmd_.set_steeringAngle=0.0;
 }
 
-PathTracking::~PathTracking()
+GridTracking::~GridTracking()
 {
-
+	if(path_vertexes_ptr_!= NULL)
+		delet
 }
 
-bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
+bool GridTracking::load_path_vertexes(const std::string& file_path, gpsMsg_t path_vertexes[][])
+{
+	FILE *fp = fopen(file_path.c_str(),"r");
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	gpsMsg_t point;
+	
+	while(!feof(fp))
+	{
+		fscanf(fp,"%lf\t%lf\t",&point.longitude,&point.latitude);
+		path_vertexes.push_back(point);
+	}
+	fclose(fp);
+	return true;
+}
+
+bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
 	
-	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
-	//sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
-	//sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",2,&PathTracking::avoiding_flag_callback,this);
+	sub_gps_ = nh.subscribe("/gps",1,&GridTracking::gps_callback,this);
+	timer_ = nh.createTimer(ros::Duration(0.01),&GridTracking::pub_gps_cmd_callback,this);
 	
-	timer_ = nh.createTimer(ros::Duration(0.01),&PathTracking::pub_gps_cmd_callback,this);
+	pub_cmd_ = nh.advertise<driverless_msgs::ControlCmd>("/cmd",1);
 	
-	pub_gps_cmd_ = nh.advertise<driverless_msgs::ControlCmd>("/cmd",5);
-	
-	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 	nh_private.param<float>("disThreshold",disThreshold_, 1.0);
 	nh_private.param<float>("speed",speed_,1.0);
+	nh_private.param<std::string>("file_path",file_path_,"");
 	
-	if(path_points_file_.empty())
+	if(file_path_.empty())
 	{
 		ROS_ERROR("no input path points file !!");
 		return false;
-	}	
-
+	}
+	if(!load_path_vertexes(file_path_, path_vertexes))
+		return false;
+	
 	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PathTracking::rosSpinThread, this)));
-
-    if(!load_path_points(path_points_file_, path_points_))
-        return false;
+	
 	
 	float last_distance = FLT_MAX;
 	float current_distance = 0;
@@ -77,12 +94,12 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	}
     return true;
 }
-void PathTracking::rosSpinThread()
+void GridTracking::rosSpinThread()
 {
 	ros::spin();
 }
 
-void PathTracking::run()
+void GridTracking::run()
 {
 	size_t i =0;
 	while(ros::ok() && target_point_index_ < path_points_.size()-1)
@@ -93,9 +110,9 @@ void PathTracking::run()
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
 		if(target_point_index_ > path_points_.size()-10)
-			gps_controlCmd_.set_speed = 0.0;
+			cmd_.set_speed = 0.0;
 		else
-			gps_controlCmd_.set_speed = speed_;
+			cmd_.set_speed = speed_;
 		
 		if( dis_yaw.first < disThreshold_ || dis_yaw.first>1000.0)//初始状态下 target(0,0)-> dis_yaw.first 将会很大
 		{
@@ -112,7 +129,6 @@ void PathTracking::run()
 		
 		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
 		
-		
 if(i%20==0){
 		ROS_INFO("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
 				current_point_.longitude,current_point_.latitude,current_point_.yaw,
@@ -121,9 +137,8 @@ if(i%20==0){
 	}	
 		saturate_cast<float>(t_roadWheelAngle,25.0);
 		
-		gps_controlCmd_.set_steeringAngle = t_roadWheelAngle;
+		cmd_.set_steeringAngle = t_roadWheelAngle;
                 
-
  		usleep(8000);
 i++;
 	}
@@ -131,12 +146,12 @@ i++;
 
 
 
-void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
+void GridTracking::pub_cmd_callback(const ros::TimerEvent&)
 {
-		pub_gps_cmd_.publish(gps_controlCmd_);
+		pub_cmd_.publish(cmd_);
 }
 
-void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
+void GridTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
 	is_gps_ok = true;
 	current_point_.longitude = msg->longitude;
@@ -144,18 +159,17 @@ void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 	current_point_.yaw = msg->azimuth;
 }
 
-
 int main(int argc,char**argv)
 {
 	ros::init(argc,argv,"path_tracking_node");
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	
-	PathTracking path_tracking;
-	if(!path_tracking.init(nh,nh_private))
+	GridTracking grid_tracking;
+	if(!grid_tracking.init(nh,nh_private))
 		return 1;
 	
-	path_tracking.run();
+	grid_tracking.run();
 
 	return 0;
 }
