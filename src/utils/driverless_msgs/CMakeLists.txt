@@ -18,6 +18,7 @@ add_message_files(
     ControlCmd.msg
     Point.msg
     Points.msg
+    DrawArea.msg
 )
 
 generate_messages(

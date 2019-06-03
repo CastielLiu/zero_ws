@@ -9,8 +9,7 @@ import math
 import os
 import numpy as np
 from driverless_msgs.msg import Lane
-from driverless_msgs.msg import Point
-from driverless_msgs.msg import Points
+from driverless_msgs.msg import DrawArea
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -104,8 +103,8 @@ class LaneDetect():
 		self.__s_thresh = (164,255)
 		
 		self.__debug = False
-		self.lane_vertex = Points()
-		self.lane_vertex.points = [None]*4
+		self.area = DrawArea()
+		self.area.Minv =  list(np.reshape(self.__Minv,(1,9))[0])
 	
 	def setThreshold(self,config):
 		self.__sobel_thresh_x = (config.x_sobel_thresh_min,config.x_sobel_thresh_max)
@@ -223,7 +222,8 @@ class LaneDetect():
 
 		lane_width,pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
 		
-		self.calculate_laneVertex(left_fit,right_fit)
+		self.area.left_fit = left_fit 
+		self.area.right_fit = right_fit
 		
 		if show_result:
 			area_img = self.draw_area(frame,left_fit,right_fit)
@@ -246,27 +246,6 @@ class LaneDetect():
 			vertex.points[index].x = int(dst[0,0]/dst[2,0])
 			vertex.points[index].y = int(dst[1,0]/dst[2,0])
 			index += 1
-		
-	def calculate_laneVertex(self,left_fit,right_fit):
-		point = Point()
-		
-		point.x = np.polyval(left_fit, 0)
-		point.y = 0
-		self.lane_vertex.points[0] = point
-		
-		point.x = np.polyval(right_fit, 0)
-		point.y = 0
-		self.lane_vertex.points[1] = point
-		
-		point.x = np.polyval(right_fit, self.__image_height)
-		point.y = self.__image_height
-		self.lane_vertex.points[2] = point
-		
-		point.x = np.polyval(left_fit, self.__image_height)
-		point.y = self.__image_height
-		self.lane_vertex.points[3] = point
-		
-		self.vetexPerspective(self.lane_vertex)
 	
 		
 	def find_line(self,binary_warped):
@@ -431,7 +410,7 @@ class image_converter:
 		#self.lane_detect.setDebug(True)
 		
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=0)
-		self.pub_laneVertex = rospy.Publisher("/lane_vertex",Points,queue_size=0)
+		self.pub_draw_area = rospy.Publisher("/draw_area",DrawArea,queue_size=0)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
 		self.srv = Server(lane_detectConfig, self.config_callback)
@@ -445,12 +424,11 @@ class image_converter:
 			return 
 		lane_msg = self.lane_detect.processing(frame)
 		self.pub_lane_msg.publish(lane_msg)
-		self.pub_laneVertex.publish(self.lane_detect.lane_vertex)
+		self.pub_draw_area.publish(self.lane_detect.area)
 	
 	def config_callback(self,config, level):
 		self.lane_detect.setThreshold(config)
 		return config
-	
 	
 
 def main(args):

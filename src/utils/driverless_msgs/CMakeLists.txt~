@@ -16,6 +16,9 @@ add_message_files(
     FILES
     Lane.msg
     ControlCmd.msg
+    Point.msg
+    Points.msg
+    DrawArea.msg
 )
 
 generate_messages(
