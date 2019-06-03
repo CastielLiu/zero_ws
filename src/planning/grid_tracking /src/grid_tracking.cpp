@@ -2,23 +2,27 @@
 
 
 GridTracking::GridTracking():
-	path_vertexes_ptr_(NULL)
+	traffic_light_(driverless_msgs::TrafficSign::GreenLight),
+	traffic_dir_(driverless_msgs::TrafficSign::DirectDir),
+	is_gps_ok(false)
 {
 	target_point_index_=0;
-	is_gps_ok = false;
+	target_vertex_index_.row = 0;
+	target_vertex_index_.col = 0;
+	
+	last_vetex_index_.row = -1;
+	last_vetex_index_.col = 0;
 
 	cmd_.set_speed =0.0;
-
 	cmd_.set_steeringAngle=0.0;
 }
 
 GridTracking::~GridTracking()
 {
-	if(path_vertexes_ptr_!= NULL)
-		delet
+
 }
 
-bool GridTracking::load_path_vertexes(const std::string& file_path, gpsMsg_t path_vertexes[][])
+bool GridTracking::loadPathVertexes(const std::string& file_path,  gpsMsg_t** path_vertexes)
 {
 	FILE *fp = fopen(file_path.c_str(),"r");
 	if(fp==NULL)
@@ -27,21 +31,28 @@ bool GridTracking::load_path_vertexes(const std::string& file_path, gpsMsg_t pat
 		return false;
 	}
 	gpsMsg_t point;
+	int i=0;
 	
-	while(!feof(fp))
+	while(!feof(fp) && i< ROWS*COLS)
 	{
 		fscanf(fp,"%lf\t%lf\t",&point.longitude,&point.latitude);
-		path_vertexes.push_back(point);
+		path_vertexes[0][i] = point;
+		i++;
 	}
 	fclose(fp);
+	
+	if(i != ROWS*COLS)
+	{
+		ROS_ERROR("path vertex count error!!!");
+		return false;
+	}
 	return true;
 }
 
 bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	
 	sub_gps_ = nh.subscribe("/gps",1,&GridTracking::gps_callback,this);
-	timer_ = nh.createTimer(ros::Duration(0.01),&GridTracking::pub_gps_cmd_callback,this);
+	timer_ = nh.createTimer(ros::Duration(0.04),&GridTracking::pub_gps_cmd_callback,this);
 	
 	pub_cmd_ = nh.advertise<driverless_msgs::ControlCmd>("/cmd",1);
 	
@@ -54,46 +65,144 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		ROS_ERROR("no input path points file !!");
 		return false;
 	}
-	if(!load_path_vertexes(file_path_, path_vertexes))
+	if(!load_path_vertexes(file_path_, path_vertexes_))
 		return false;
 	
-	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&PathTracking::rosSpinThread, this)));
-	
-	
-	float last_distance = FLT_MAX;
-	float current_distance = 0;
+	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&GridTracking::rosSpinThread, this)));
 	
 	while(!is_gps_ok && ros::ok()) usleep(1000);
 
-	ROS_INFO("path_points_.size:%d",path_points_.size());
+	generateOriginPathPoints(path_points_);
+	
+	float current_distance, last_distance = FLT_MAX;
+
 	for(target_point_index_ =0; target_point_index_<path_points_.size(); )
 	{
-		
 		target_point_ = path_points_[target_point_index_];
-        std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
-		current_distance = get_dis_yaw(current_point_,target_point_).first;
+		current_distance = point2point_dis(current_point_,target_point_);
 		
 		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
-		printf("cur: %f\t%f\t tar: %f\t%f\r\n",current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
+		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
+				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
 		if(current_distance - last_distance > 0)
 		{
-            target_point_index_--;
-            target_point_ = path_points_[target_point_index_];
+            target_point_ = path_points_[--target_point_index_];
 			break;
 		}
 		last_distance = current_distance;
 		
 		target_point_index_++;
 	}
-	
-	if(target_point_index_ == path_points_.size())
-	{
-		ROS_ERROR("file read over, No target was found");
-		return false;
-	}
-    return true;
 }
+
+void GridTracking::generateOriginPathPoints(std::vector<gpsMsg_t>& path_points)
+{
+	gpsMsg_t start_point = current_point_;
+	gpsMsg_t end_point = path_vertexes_[0][0];
+	
+	int points_cnt = point2point_dis(start_point,end_point)/DIS_INCREMENT;
+	
+	double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
+	double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
+	for(size_t i=0; i<points_cnt; i++)
+	{
+		gpsMsg_t point;
+		point.longitude = start_point.longitude + longitude_increment;
+		point.latitude = start_point.latitude + latitude_increment;
+		path_points.push_back(point);
+	}
+}
+
+void GridTracking::generateNewPathPoints(uint8_t& dir, std::vector<gpsMsg_t>& path_points)
+{
+	gpsMsg_t start_point = path_vertexes_[target_vertex_index_.row][target_vertex_index_.col];
+	uint8_t row_diff = target_vertex_index_.row-last_vetex_index_.row;
+	uint8_t col_diff = target_vertex_index_.col-last_vetex_index_.col;
+	
+	if(dir == DIR_INVALID)
+	{
+		//only one selection
+		if(target_vertex_index_.row+1 < ROWS && target_vertex_index_.col+1 >= COLS)
+			target_vertex_index_.row ++;
+		else if(target_vertex_index_.col+1 < COLS && target_vertex_index_.row+1 >= ROWS) 
+			target_vertex_index_.col ++;
+		else
+			return;	
+	}
+	else if(dir == driverless_msgs::TrafficSign::DirectDir)
+	{
+		if(row_diff==1 && col_diff==0) //row +
+			target_vertex_index_.row ++;
+		else if(row_diff==-1 && col_diff==0) //row-
+			target_vertex_index_.row --;
+		else if(row_diff==0 && col_diff==1) //col+
+			target_vertex_index_.col ++;
+		else if(row_diff==0 && col_diff==-1) //col-
+			target_vertex_index_.col --;
+		else
+			ROS_ERROR("row_diff or col_diff error!!!");
+	}
+	else if(dir == driverless_msgs::TrafficSign::LeftDir)
+	{
+		if(row_diff==1 && col_diff==0) //row +
+			target_vertex_index_.col --;
+		else if(row_diff==-1 && col_diff==0) //row-
+			target_vertex_index_.col ++;
+		else if(row_diff==0 && col_diff==1) //col+
+			target_vertex_index_.row ++;
+		else if(row_diff==0 && col_diff==-1) //col-
+			target_vertex_index_.row --;
+		else
+			ROS_ERROR("row_diff or col_diff error!!!");
+	}
+	else if(dir == driverless_msgs::TrafficSign::RightDir)
+	{
+		if(row_diff==1 && col_diff==0) //row +
+			target_vertex_index_.col ++;
+		else if(row_diff==-1 && col_diff==0) //row-
+			target_vertex_index_.col --;
+		else if(row_diff==0 && col_diff==1) //col+
+			target_vertex_index_.row --;
+		else if(row_diff==0 && col_diff==-1) //col-
+			target_vertex_index_.row ++;
+		else
+			ROS_ERROR("row_diff or col_diff error!!!");
+	}
+	
+	gpsMsg_t end_point = path_vertexes_[target_vertex_index_.row][target_vertex_index_.col]; 
+	
+	else if(dir == driverless_msgs::TrafficSign::DirectDir)
+	{
+		target_vertex_index_ += COLS;
+		start_point = path_vertexes[target_vertex_index_-1];
+	}
+	else if(dir == driverless_msgs::TrafficSign::LeftDir)
+	{
+		target_vertex_index_ --;
+		start_point = path_vertexes[target_vertex_index_-1];
+	}
+		
+		
+		
+	end_point = path_vertexes[target_vertex_index_];
+			
+	int points_cnt = point2point_dis(start_point,end_point)/DIS_INCREMENT;
+	
+	double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
+	double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
+	for(size_t i=0; i<points_cnt; i++)
+	{
+		gpsMsg_t point;
+		point.longitude = start_point.longitude + longitude_increment;
+		point.latitude = start_point.latitude + latitude_increment;
+		path_points.push_back(point);
+	}
+	
+	dir = DIR_INVALID;
+}
+
+
 void GridTracking::rosSpinThread()
 {
 	ros::spin();
@@ -104,12 +213,14 @@ void GridTracking::run()
 	size_t i =0;
 	while(ros::ok() && target_point_index_ < path_points_.size()-1)
 	{
-		if(current_point_.longitude <1.0 && current_point_.latitude <1.0)//初始状态或者数据异常
-			continue;
 		target_point_ = path_points_[target_point_index_];
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
-		if(target_point_index_ > path_points_.size()-10)
+		if(target_point_index_ > path_points_.size()-3.0/DIS_INCREMENT) //3m
+		{
+			generateNewPathPoints(traffic_dir_, path_points_);
+			
+		}
 			cmd_.set_speed = 0.0;
 		else
 			cmd_.set_speed = speed_;

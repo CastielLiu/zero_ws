@@ -58,7 +58,8 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		current_distance = get_dis_yaw(current_point_,target_point_).first;
 		
 		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
-		printf("cur: %f\t%f\t tar: %f\t%f\r\n",current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
+		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
+				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
 		if(current_distance - last_distance > 0)
 		{
             target_point_index_--;
@@ -87,8 +88,6 @@ void PathTracking::run()
 	size_t i =0;
 	while(ros::ok() && target_point_index_ < path_points_.size()-1)
 	{
-		if(current_point_.longitude <1.0 && current_point_.latitude <1.0)//初始状态或者数据异常
-			continue;
 		target_point_ = path_points_[target_point_index_];
 		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
@@ -97,7 +96,7 @@ void PathTracking::run()
 		else
 			gps_controlCmd_.set_speed = speed_;
 		
-		if( dis_yaw.first < disThreshold_ || dis_yaw.first>1000.0)//初始状态下 target(0,0)-> dis_yaw.first 将会很大
+		if( dis_yaw.first < disThreshold_ || dis_yaw.first>50.0)
 		{
 			target_point_index_ ++;
 			continue;

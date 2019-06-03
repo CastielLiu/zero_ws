@@ -17,6 +17,10 @@
 #include<thread>
 #include<driverless_msgs/TrafficSign.h>
 
+#define ROWS 4
+#define COLS 2
+#define DIS_INCREMENT 0.1
+#define DIR_INVALID 255
 
 class GridTracking
 {
@@ -28,21 +32,19 @@ public:
 	
 	void pub_cmd_callback(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
+	bool loadPathVertexes(const std::string& file_path,  gpsMsg_t** path_vertexes);
+	void generateNewPathPoints(uint8_t dir, std::vector<gpsMsg_t>& path_points, bool first_time=false);
 	void rosSpinThread();
-	
 	
 private:
 	ros::Subscriber sub_gps_;
 	ros::Subscriber sub_traffic_sign_;
-	ros::Subscriber sub_vehicleState2_;
 	
 	ros::Timer timer_;
-	
 	ros::Publisher pub_cmd_;
-	FILE * fp;
 	
 	std::string file_path_;
-	gpsMsg_t *path_vertexes_ptr_;
+	gpsMsg_t path_vertexes_[ROWS][COLS];
     std::vector<gpsMsg_t> path_points_;
     
     boost::shared_ptr<boost::thread> rosSpin_thread_ptr_;
@@ -51,6 +53,15 @@ private:
 	gpsMsg_t target_point_;
 	
 	uint32_t target_point_index_;
+	
+	struct 
+	{
+		uint8_t row;
+		uint8_t col;
+	}target_vertex_index_, last_vetex_index_;
+	
+	uint8_t traffic_light_;
+	uint8_t traffic_dir_;
 
     float disThreshold_;
 	
