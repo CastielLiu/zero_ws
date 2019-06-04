@@ -6,7 +6,6 @@
 #include<std_msgs/Int8.h>
 #include <limits.h>
 
-//#include<little_ant_msgs/State2.h>  //speed
 #include"gps_msgs/Inspvax.h"
 #include<std_msgs/Bool.h>
 
@@ -22,6 +21,13 @@
 #define DIS_INCREMENT 0.1
 #define DIR_INVALID 255
 
+
+typedef struct 
+{
+	uint8_t row;
+	uint8_t col;
+} vertexIndex_t;
+
 class GridTracking
 {
 public:
@@ -30,11 +36,15 @@ public:
 	bool init(ros::NodeHandle nh,ros::NodeHandle nh_private);
 	void run();
 	
-	void pub_cmd_callback(const ros::TimerEvent&);
+	void cmd_timer(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
-	bool loadPathVertexes(const std::string& file_path,  gpsMsg_t** path_vertexes);
-	void generateNewPathPoints(uint8_t dir, std::vector<gpsMsg_t>& path_points, bool first_time=false);
-	void rosSpinThread();
+	void traffic_sign_callback(const driverless_msgs::TrafficSign::ConstPtr &msg);
+	bool loadPathVertexes(const std::string& file_path, gpsMsg_t path_vertexes[ROWS][COLS]);
+	void generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMsg_t>& path_points);
+	void generateOriginPathPoints(std::vector<gpsMsg_t>& path_points);
+	uint8_t generateCurrentDir(const vertexIndex_t& target_index, const vertexIndex_t& last_index);
+	bool updateTargetVertexIndex(uint8_t current_dir, uint8_t traffic_dir, vertexIndex_t& target_vertex_index);
+	void rosSpinThread(){ros::spin();}
 	
 private:
 	ros::Subscriber sub_gps_;
@@ -54,32 +64,22 @@ private:
 	
 	uint32_t target_point_index_;
 	
-	struct 
-	{
-		uint8_t row;
-		uint8_t col;
-	}target_vertex_index_, last_vetex_index_;
+	vertexIndex_t target_vertex_index_, last_vetex_index_;
 	
-	uint8_t traffic_light_;
+	bool is_trafficLightGreen_;
+	
 	uint8_t traffic_dir_;
 
     float disThreshold_;
 	
 	driverless_msgs::ControlCmd cmd_;
 	
-	float speed_;
+	float tracking_speed_;
 
 	boost::mutex mutex_;
 	bool is_gps_ok;
 	
 
 };
-
-
- 
-
-
-
-
 #endif
 
