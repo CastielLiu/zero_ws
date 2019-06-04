@@ -77,13 +77,13 @@ class LaneDetect():
 		self.__image_height = 480
 		self.__image_width = 640
 		self.__cut_height = 120				##@param
-		self.__draw_y = 378					##@param  
-		self.__offset = 150 #pixel
-		self.__angleOffset = 2.6/180.0*np.pi##@param 
-		self.__A = (3,320)					##@param
-		self.__B = (261,self.__cut_height)	##@param
-		self.__C = (381,self.__cut_height)	##@param
-		self.__D = (632,320)				##@param
+		self.__draw_y = 359					##@param  
+		self.__offset = 180 #pixel
+		self.__angleOffset = 1.1/180.0*np.pi##@param 
+		self.__A = (0,452)					##@param
+		self.__B = (271,self.__cut_height)	##@param
+		self.__C = (373,self.__cut_height)	##@param
+		self.__D = (638,452)				##@param
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -92,8 +92,8 @@ class LaneDetect():
 		self.__dstPoints = np.float32([self.__A_,self.__B_,self.__C_,self.__D_])
 		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
-		self.__xmPerPixel = 1.49/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 3.63/(self.__D_[1]-self.__C_[1])	##@param
+		self.__xmPerPixel = 0.90/(self.__D_[0]-self.__A_[0])		##@param
+		self.__ymPerpixel = 4.34/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
 		self.__sobel_thresh_x = (57,255)
@@ -206,6 +206,7 @@ class LaneDetect():
 			cv2.imshow('hls_thresh_l',hls_thresh_l)
 			cv2.imshow('hls_thresh_s',hls_thresh_s)
 			cv2.imshow("thresholded",thresholded)
+			cv2.waitKey(1)
 		
 		return thresholded
 
@@ -235,7 +236,7 @@ class LaneDetect():
 		msg.validity = validity
 		msg.lane_width = lane_width
 		msg.offset = -pos_from_center
-		msg.theta = angle - self.__angleOffset
+		msg.theta = angle + self.__angleOffset
 		return msg
 		
 	def vetexPerspective(self,vertex):
@@ -353,7 +354,7 @@ class LaneDetect():
 		
 		distance_from_center = x_offset_pixel * self.__xmPerPixel;
 		
-		if (left_angle-right_angle)*180.0/math.pi >10.0 or distance_from_center > 0.5:
+		if (left_angle-right_angle)*180.0/math.pi >20.0 or distance_from_center > 0.5:
 			print('two angle diff or offset is too big -> left:%.2f\t right:%.2f\t offset:%.2f' \
 						%(left_angle*180.0/np.pi,right_angle*180.0/np.pi,distance_from_center))
 			validity = False
@@ -407,7 +408,7 @@ class LaneDetect():
 class image_converter:
 	def __init__(self):
 		self.lane_detect = LaneDetect()
-		#self.lane_detect.setDebug(True)
+		self.lane_detect.setDebug(True)
 		
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=0)
 		self.pub_draw_area = rospy.Publisher("/draw_area",DrawArea,queue_size=0)
@@ -422,7 +423,7 @@ class image_converter:
 		except CvBridgeError as e:
 			print(e)
 			return 
-		lane_msg = self.lane_detect.processing(frame)
+		lane_msg = self.lane_detect.processing(frame, show_result=False)
 		self.pub_lane_msg.publish(lane_msg)
 		self.pub_draw_area.publish(self.lane_detect.area)
 	

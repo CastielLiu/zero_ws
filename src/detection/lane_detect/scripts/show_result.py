@@ -45,11 +45,11 @@ class ShowResult:
 		pure = np.zeros_like(img)
 		cv2.fillPoly(pure, rect, (0, 255, 0))
 	
-		cv2.imshow("ss",pure)
+		#cv2.imshow("ss",pure)
 		
 		newwarp = cv2.warpPerspective(pure, Minv, (img.shape[1], img.shape[0]))
 		
-		cv2.imshow("newwarp",newwarp)
+		#cv2.imshow("newwarp",newwarp)
 		return cv2.addWeighted(img, 1, newwarp, 0.3, 0)
 
 
