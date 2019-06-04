@@ -43,23 +43,35 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 	return speed>max_speed? max_speed: speed;
 }
 
-float point2point_dis(const gpsMsg_t &point1, const gpsMsg_t &point2)
+float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end)
 {
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);
-	float y = (point1.latitude - point2.latitude ) *111000;
-	return  sqrt(x * x + y * y);
+	float x = (end.longitude -start.longitude)*111000*cos(end.latitude*M_PI/180.0);
+	float y = (end.latitude - start.latitude ) *111000;
+	
+	float dis = sqrt(x * x + y * y);
+	float yaw = atan2(x,y) *180.0/M_PI;
+	if(yaw <0)
+		yaw += 360.0;
+		
+	if(fabs(yaw- start.yaw)>90.0)
+		dis *= -1;
+	return dis;
 }
 
-std::pair<float, float> get_dis_yaw(const gpsMsg_t &point1, const gpsMsg_t &point2)
+std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end)
 {
-	float x = (point1.longitude -point2.longitude)*111000*cos(point1.latitude*M_PI/180.0);
-	float y = (point1.latitude - point2.latitude ) *111000;
+	float x = (end.longitude -start.longitude)*111000*cos(end.latitude*M_PI/180.0);
+	float y = (end.latitude - start.latitude ) *111000;
 	
 	std::pair<float, float> dis_yaw;
+	
 	dis_yaw.first = sqrt(x * x + y * y);
 	dis_yaw.second = atan2(x,y) *180.0/M_PI;
 	if(dis_yaw.second <0)
 		dis_yaw.second += 360.0;
+		
+	if(fabs(dis_yaw.second - start.yaw)>90.0)
+		dis_yaw.first *= -1;
 	return dis_yaw;
 }
 

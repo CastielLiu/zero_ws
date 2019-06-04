@@ -19,7 +19,6 @@ PathTracking::~PathTracking()
 
 bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
-	
 	sub_gps_ = nh.subscribe("/gps",5,&PathTracking::gps_callback,this);
 	//sub_vehicleState2_ = nh.subscribe("/vehicleState2",5,&PathTracking::vehicleSpeed_callback,this);
 	//sub_avoiding_from_lidar_ = nh.subscribe("/start_avoiding",2,&PathTracking::avoiding_flag_callback,this);
@@ -43,30 +42,28 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
     if(!load_path_points(path_points_file_, path_points_))
         return false;
 	
-	float last_distance = FLT_MAX;
-	float current_distance = 0;
-	
-	while(!is_gps_ok && ros::ok()) usleep(1000);
+	while(!is_gps_ok && ros::ok()) 
+	{
+		usleep(500000);
+		ROS_INFO("wait for gps initial...");
+	}
 
 	ROS_INFO("path_points_.size:%d",path_points_.size());
 	for(target_point_index_ =0; target_point_index_<path_points_.size(); )
 	{
-		
 		target_point_ = path_points_[target_point_index_];
-        std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
 		
-		current_distance = get_dis_yaw(current_point_,target_point_).first;
+		float current_distance = disBetween2Points(current_point_,target_point_);
 		
-		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
+		ROS_INFO("current_distance:%f",current_distance);
+
 		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
 				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
-		if(current_distance - last_distance > 0)
+		if(current_distance > 0)
 		{
-            target_point_index_--;
             target_point_ = path_points_[target_point_index_];
 			break;
 		}
-		last_distance = current_distance;
 		
 		target_point_index_++;
 	}
@@ -89,7 +86,7 @@ void PathTracking::run()
 	while(ros::ok() && target_point_index_ < path_points_.size()-1)
 	{
 		target_point_ = path_points_[target_point_index_];
-		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
+		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_);
 		
 		if(target_point_index_ > path_points_.size()-10)
 			gps_controlCmd_.set_speed = 0.0;
@@ -128,15 +125,19 @@ i++;
 	}
 }
 
-
-
 void PathTracking::pub_gps_cmd_callback(const ros::TimerEvent&)
 {
-		pub_gps_cmd_.publish(gps_controlCmd_);
+	pub_gps_cmd_.publish(gps_controlCmd_);
 }
 
 void PathTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
+	static int system_delay = 10;
+	if(system_delay)
+	{
+		system_delay--;
+		return;
+	}
 	is_gps_ok = true;
 	current_point_.longitude = msg->longitude;
 	current_point_.latitude = msg->latitude;

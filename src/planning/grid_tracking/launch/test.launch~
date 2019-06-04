@@ -1,0 +1,25 @@
+<!-- -->
+<launch>
+
+	
+	<node name="grid_tracking_node" pkg="grid_tracking" type="grid_tracking_node" output="screen">
+		<param name="file_path" value="$(find grid_tracking)/vertex_file/data.txt"/>
+		<param name="disThreshold" value="3.0"/>
+		<param name="tracking_speed" value="2.0"/>
+    </node>
+
+	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
+	
+		<param name ="port_name"   value="/dev/ttyUSB1"/>
+		<param name ="baudrate"    value="115200"/>
+	</node>
+	
+	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node">
+		<param name="path_points_file" value="$(find grid_tracking)/vertex_file/result.txt" />
+	</node>
+
+    <node type="base_control_node" pkg ="base_control" name="base_control_node" >
+    	<param name ="stm32_port_name"   value="/dev/ttyUSB0"/>
+    </node>
+      
+</launch>

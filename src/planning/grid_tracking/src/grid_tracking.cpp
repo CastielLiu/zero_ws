@@ -10,8 +10,8 @@ GridTracking::GridTracking():
 	target_vertex_index_.row = 0;
 	target_vertex_index_.col = 0;
 	
-	last_vetex_index_.row = -1;
-	last_vetex_index_.col = 0;
+	last_vertex_index_.row = 0;
+	last_vertex_index_.col = 0;
 
 	cmd_.set_speed =0.0;
 	cmd_.set_steeringAngle=0.0;
@@ -41,48 +41,62 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	
 	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&GridTracking::rosSpinThread, this)));
 	
-	while(!is_gps_ok && ros::ok()) usleep(1000);
-
-	generateOriginPathPoints(path_points_);
-	
-	float current_distance, last_distance = FLT_MAX;
+	while(!is_gps_ok && ros::ok())
+	{
+		usleep(500000);
+		ROS_INFO("wait for gps initial...");
+	}
+	if(!generateOriginPathPoints(path_points_))
+		return false;
 
 	for(target_point_index_ =0; target_point_index_<path_points_.size(); )
 	{
 		target_point_ = path_points_[target_point_index_];
 		
-		current_distance = point2point_dis(current_point_,target_point_);
+		float current_distance = disBetween2Points(current_point_,target_point_);
 		
-		ROS_INFO("current_distance:%f\t last_distance:%f",current_distance,last_distance);
+		ROS_INFO("current_distance:%f",current_distance);
 		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
 				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
-		if(current_distance - last_distance > 0)
+		if(current_distance > 0)
 		{
             target_point_ = path_points_[--target_point_index_];
 			break;
 		}
-		last_distance = current_distance;
-		
 		target_point_index_++;
 	}
+	if(target_point_index_ == path_points_.size())
+	{
+		ROS_ERROR("No target point was found");
+		return false;
+	}
+    return true;
 }
 
-void GridTracking::generateOriginPathPoints(std::vector<gpsMsg_t>& path_points)
+bool GridTracking::generateOriginPathPoints(std::vector<gpsMsg_t>& path_points)
 {
 	gpsMsg_t start_point = current_point_;
 	gpsMsg_t end_point = path_vertexes_[0][0];
 	
-	int points_cnt = point2point_dis(start_point,end_point)/DIS_INCREMENT;
+	int points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
+	ROS_INFO("points_cnt:%d",points_cnt);
+	
+	if(points_cnt < 0)
+	{
+		ROS_ERROR("generateOriginPathPoints failed");
+		return false;
+	}
 	
 	double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
 	double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
 	for(size_t i=0; i<points_cnt; i++)
 	{
 		gpsMsg_t point;
-		point.longitude = start_point.longitude + longitude_increment;
-		point.latitude = start_point.latitude + latitude_increment;
+		point.longitude = start_point.longitude + longitude_increment *i;
+		point.latitude = start_point.latitude + latitude_increment *i;
 		path_points.push_back(point);
 	}
+	return true;
 }
 
 uint8_t GridTracking::generateCurrentDir(const vertexIndex_t& target_index, const vertexIndex_t& last_index)
@@ -134,9 +148,11 @@ bool GridTracking::updateTargetVertexIndex(uint8_t current_dir, uint8_t traffic_
 
 void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMsg_t>& path_points)
 {
+	vertexIndex_t temp = target_vertex_index_;
+	
 	gpsMsg_t start_point = path_vertexes_[target_vertex_index_.row][target_vertex_index_.col];
 	
-	uint8_t current_dir = generateCurrentDir(target_vertex_index_,last_vetex_index_);
+	uint8_t current_dir = generateCurrentDir(target_vertex_index_,last_vertex_index_);
 	
 	if(!updateTargetVertexIndex(current_dir, traffic_dir, target_vertex_index_))
 		return;
@@ -146,17 +162,18 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 	
 	gpsMsg_t end_point = path_vertexes_[target_vertex_index_.row][target_vertex_index_.col]; 
 			
-	size_t points_cnt = point2point_dis(start_point,end_point)/DIS_INCREMENT;
+	size_t points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
 	
 	double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
 	double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
 	for(size_t i=0; i<points_cnt; i++)
 	{
 		gpsMsg_t point;
-		point.longitude = start_point.longitude + longitude_increment;
-		point.latitude = start_point.latitude + latitude_increment;
+		point.longitude = start_point.longitude + longitude_increment *i;
+		point.latitude = start_point.latitude + latitude_increment *i;
 		path_points.push_back(point);
 	}
+	last_vertex_index_ = temp;
 }
 
 void GridTracking::run()
@@ -170,7 +187,7 @@ void GridTracking::run()
 			break;
 			
 		target_point_ = path_points_[target_point_index_];
-		std::pair<float, float> dis_yaw = get_dis_yaw(current_point_,target_point_);
+		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_);
 		
 		if( dis_yaw.first < disThreshold_)
 		{
@@ -196,7 +213,7 @@ void GridTracking::run()
                 
  		usleep(10000);
 		
-		if(i%20==0)
+		if(i%50==0)
 		{
 			ROS_INFO("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
 					current_point_.longitude,current_point_.latitude,current_point_.yaw,
@@ -216,6 +233,12 @@ void GridTracking::cmd_timer(const ros::TimerEvent&)
 
 void GridTracking::gps_callback(const gps_msgs::Inspvax::ConstPtr &msg)
 {
+	static int system_delay = 10;
+	if(system_delay)
+	{
+		system_delay--;
+		return;
+	}
 	is_gps_ok = true;
 	current_point_.longitude = msg->longitude;
 	current_point_.latitude = msg->latitude;

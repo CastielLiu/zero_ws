@@ -41,7 +41,7 @@ public:
 	void traffic_sign_callback(const driverless_msgs::TrafficSign::ConstPtr &msg);
 	bool loadPathVertexes(const std::string& file_path, gpsMsg_t path_vertexes[ROWS][COLS]);
 	void generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMsg_t>& path_points);
-	void generateOriginPathPoints(std::vector<gpsMsg_t>& path_points);
+	bool generateOriginPathPoints(std::vector<gpsMsg_t>& path_points);
 	uint8_t generateCurrentDir(const vertexIndex_t& target_index, const vertexIndex_t& last_index);
 	bool updateTargetVertexIndex(uint8_t current_dir, uint8_t traffic_dir, vertexIndex_t& target_vertex_index);
 	void rosSpinThread(){ros::spin();}
@@ -64,7 +64,7 @@ private:
 	
 	uint32_t target_point_index_;
 	
-	vertexIndex_t target_vertex_index_, last_vetex_index_;
+	vertexIndex_t target_vertex_index_, last_vertex_index_;
 	
 	bool is_trafficLightGreen_;
 	
