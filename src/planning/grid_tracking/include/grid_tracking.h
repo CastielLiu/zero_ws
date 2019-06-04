@@ -44,6 +44,7 @@ public:
 	bool generateOriginPathPoints(std::vector<gpsMsg_t>& path_points);
 	uint8_t generateCurrentDir(const vertexIndex_t& target_index, const vertexIndex_t& last_index);
 	bool updateTargetVertexIndex(uint8_t current_dir, uint8_t traffic_dir, vertexIndex_t& target_vertex_index);
+	bool dumpPathPoints(const std::string& file_path, const std::vector<gpsMsg_t>& path_points);
 	void rosSpinThread(){ros::spin();}
 	
 private:

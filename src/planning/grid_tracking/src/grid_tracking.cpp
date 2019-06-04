@@ -10,7 +10,7 @@ GridTracking::GridTracking():
 	target_vertex_index_.row = 0;
 	target_vertex_index_.col = 0;
 	
-	last_vertex_index_.row = 0;
+	last_vertex_index_.row = -1;
 	last_vertex_index_.col = 0;
 
 	cmd_.set_speed =0.0;
@@ -70,6 +70,7 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		ROS_ERROR("No target point was found");
 		return false;
 	}
+	ROS_INFO("grid tracking node initial ok. target index: %d",target_point_index_);
     return true;
 }
 
@@ -154,11 +155,19 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 	
 	uint8_t current_dir = generateCurrentDir(target_vertex_index_,last_vertex_index_);
 	
+	ROS_INFO("current_dir:%d",current_dir);
+	
 	if(!updateTargetVertexIndex(current_dir, traffic_dir, target_vertex_index_))
+	{
+		ROS_INFO("updateTargetVertexIndex failed");
 		return;
+	}
 		
 	if(target_vertex_index_.row >= ROWS || target_vertex_index_.col >= COLS)
+	{
+		ROS_INFO("target_vertex_index_ error");
 		return;
+	}
 	
 	gpsMsg_t end_point = path_vertexes_[target_vertex_index_.row][target_vertex_index_.col]; 
 			
@@ -174,6 +183,7 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 		path_points.push_back(point);
 	}
 	last_vertex_index_ = temp;
+	dumpPathPoints("/home/wuconglei/a_wendao/zero_ws/test.txt",path_points_);
 }
 
 void GridTracking::run()
@@ -181,11 +191,16 @@ void GridTracking::run()
 	size_t i =0;
 	while(ros::ok())
 	{
-		if(target_point_index_ > path_points_.size()-3.0/DIS_INCREMENT) //3m
-			generateNewPathPoints(traffic_dir_, path_points_);
-		else if(target_point_index_ > path_points_.size()-1)
+		if(target_point_index_ > path_points_.size()-1)
 			break;
+		else if(target_point_index_ > path_points_.size()-3.0/DIS_INCREMENT) //3m
+		{
+			ROS_INFO("target_point_index_:%d\t path_points_size:%d",target_point_index_,path_points_.size());
+			ROS_INFO("need to generateNewPathPoints");
+			generateNewPathPoints(traffic_dir_, path_points_);
+		}
 			
+		 
 		target_point_ = path_points_[target_point_index_];
 		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_);
 		
@@ -220,8 +235,10 @@ void GridTracking::run()
 					target_point_.longitude,target_point_.latitude,dis_yaw.second);
 			ROS_INFO("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",
 					dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
+			ROS_INFO("target_index:%d\t size:%d\t traffic_dir:%d",target_point_index_, path_points_.size(),traffic_dir_);
 		} i++;	
 	}
+	ROS_INFO("grid_tracking_node complete...");
 }
 
 
@@ -282,6 +299,24 @@ bool GridTracking::loadPathVertexes(const std::string& file_path,  gpsMsg_t path
 		ROS_ERROR("path vertex count error!!!");
 		return false;
 	}
+	return true;
+}
+
+bool GridTracking::dumpPathPoints(const std::string& file_path, const std::vector<gpsMsg_t>& path_points)
+{
+	FILE *fp = fopen(file_path.c_str(),"w");
+	
+	if(fp==NULL)
+	{
+		ROS_ERROR("open %s failed",file_path.c_str());
+		return false;
+	}
+	
+	for(size_t i=0;i<path_points.size();i++)
+		fprintf(fp,"%lf\t%lf\n",path_points[i].longitude, path_points[i].latitude);
+			
+	fclose(fp);
+	
 	return true;
 }
 
