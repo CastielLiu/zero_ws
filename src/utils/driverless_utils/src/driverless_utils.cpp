@@ -43,7 +43,7 @@ float limitSpeedByPathCurvature(const float& speed,const float& curvature)
 	return speed>max_speed? max_speed: speed;
 }
 
-float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end)
+float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end ,bool orientation)
 {
 	float x = (end.longitude -start.longitude)*111000*cos(end.latitude*M_PI/180.0);
 	float y = (end.latitude - start.latitude ) *111000;
@@ -52,13 +52,15 @@ float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end)
 	float yaw = atan2(x,y) *180.0/M_PI;
 	if(yaw <0)
 		yaw += 360.0;
-		
+	if(!orientation)
+		return dis;
+	
 	if(fabs(yaw- start.yaw)>90.0)
 		dis *= -1;
 	return dis;
 }
 
-std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end)
+std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end,bool orientation)
 {
 	float x = (end.longitude -start.longitude)*111000*cos(end.latitude*M_PI/180.0);
 	float y = (end.latitude - start.latitude ) *111000;
@@ -69,6 +71,9 @@ std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end)
 	dis_yaw.second = atan2(x,y) *180.0/M_PI;
 	if(dis_yaw.second <0)
 		dis_yaw.second += 360.0;
+	
+	if(!orientation)
+		return dis_yaw;
 		
 	if(fabs(dis_yaw.second - start.yaw)>90.0)
 		dis_yaw.first *= -1;

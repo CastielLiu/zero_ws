@@ -7,11 +7,15 @@ GridTracking::GridTracking():
 	is_gps_ok(false)
 {
 	target_point_index_=0;
+	
 	target_vertex_index_.row = 0;
 	target_vertex_index_.col = 0;
 	
 	last_vertex_index_.row = -1;
 	last_vertex_index_.col = 0;
+	
+	end_vertex_index_.row = 3;
+	end_vertex_index_.col =0;
 
 	cmd_.set_speed =0.0;
 	cmd_.set_steeringAngle=0.0;
@@ -24,6 +28,7 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	sub_gps_ = nh.subscribe("/gps",1, &GridTracking::gps_callback,this);
 	sub_traffic_sign_ = nh.subscribe("/traffic_sign",1, &GridTracking::traffic_sign_callback, this);
 	timer_ = nh.createTimer(ros::Duration(0.04),&GridTracking::cmd_timer,this);
+	sub_dump_ = nh.subscribe("/dump",0,&GridTracking::dump_callback,this);
 	
 	pub_cmd_ = nh.advertise<driverless_msgs::ControlCmd>("/cmd",1);
 	
@@ -36,7 +41,7 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		ROS_ERROR("no input path points file !!");
 		return false;
 	}
-	if(!loadPathVertexes(file_path_, path_vertexes_))
+	if(!loadPathVertexes(file_path_))
 		return false;
 	
 	rosSpin_thread_ptr_ = boost::shared_ptr<boost::thread >(new boost::thread(boost::bind(&GridTracking::rosSpinThread, this)));
@@ -46,7 +51,7 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		usleep(500000);
 		ROS_INFO("wait for gps initial...");
 	}
-	if(!generateOriginPathPoints(path_points_))
+	if(!generateStartPathPoints(path_points_))
 		return false;
 
 	for(target_point_index_ =0; target_point_index_<path_points_.size(); )
@@ -60,7 +65,7 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
 		if(current_distance > 0)
 		{
-            target_point_ = path_points_[--target_point_index_];
+			target_point_ = path_points_[--target_point_index_];
 			break;
 		}
 		target_point_index_++;
@@ -74,9 +79,9 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
     return true;
 }
 
-bool GridTracking::generateOriginPathPoints(std::vector<gpsMsg_t>& path_points)
+bool GridTracking::generateStartPathPoints(std::vector<gpsMsg_t>& path_points)
 {
-	gpsMsg_t start_point = current_point_;
+	gpsMsg_t start_point = starting_point_;
 	gpsMsg_t end_point = path_vertexes_[0][0];
 	
 	int points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
@@ -84,7 +89,33 @@ bool GridTracking::generateOriginPathPoints(std::vector<gpsMsg_t>& path_points)
 	
 	if(points_cnt < 0)
 	{
-		ROS_ERROR("generateOriginPathPoints failed");
+		ROS_ERROR("generateStartPathPoints failed");
+		return false;
+	}
+	
+	double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
+	double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
+	for(size_t i=0; i<points_cnt; i++)
+	{
+		gpsMsg_t point;
+		point.longitude = start_point.longitude + longitude_increment *i;
+		point.latitude = start_point.latitude + latitude_increment *i;
+		path_points.push_back(point);
+	}
+	return true;
+}
+
+bool GridTracking::generateEndPathPoints(std::vector<gpsMsg_t>& path_points)
+{
+	gpsMsg_t start_point = path_vertexes_[ROWS-1][0];
+	gpsMsg_t end_point = ending_point_;
+	
+	int points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
+	ROS_INFO("points_cnt:%d",points_cnt);
+	
+	if(points_cnt < 0)
+	{
+		ROS_ERROR("generateEndPathPoints failed");
 		return false;
 	}
 	
@@ -173,6 +204,9 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 			
 	size_t points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
 	
+	ROS_INFO("start_point: %f\t%f\t end_point: %f\t%f\t points_cnt:%d",
+			start_point.longitude,start_point.latitude,end_point.longitude,end_point.latitude,points_cnt);
+	
 	double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
 	double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
 	for(size_t i=0; i<points_cnt; i++)
@@ -183,7 +217,7 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 		path_points.push_back(point);
 	}
 	last_vertex_index_ = temp;
-	dumpPathPoints("/home/wuconglei/a_wendao/zero_ws/test.txt",path_points_);
+	//dumpPathPoints("/home/wendao/projects/zero_ws/test.txt",path_points_);
 }
 
 void GridTracking::run()
@@ -193,16 +227,19 @@ void GridTracking::run()
 	{
 		if(target_point_index_ > path_points_.size()-1)
 			break;
-		else if(target_point_index_ > path_points_.size()-3.0/DIS_INCREMENT) //3m
+		else if(target_point_index_ > path_points_.size()-3.0/DIS_INCREMENT && //3m
+				!target_vertex_index_.equal_to(end_vertex_index_))
 		{
+			cmd_.set_speed = 0.0;
 			ROS_INFO("target_point_index_:%d\t path_points_size:%d",target_point_index_,path_points_.size());
 			ROS_INFO("need to generateNewPathPoints");
 			generateNewPathPoints(traffic_dir_, path_points_);
 		}
+		else if(target_vertex_index_.equal_to(end_vertex_index_))
+			generateEndPathPoints(path_points_);
 			
-		 
 		target_point_ = path_points_[target_point_index_];
-		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_);
+		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_,CONSIDER_DIR);
 		
 		if( dis_yaw.first < disThreshold_)
 		{
@@ -228,13 +265,13 @@ void GridTracking::run()
                 
  		usleep(10000);
 		
-		if(i%50==0)
+		if(i%100==0)
 		{
-			ROS_INFO("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
+			/*ROS_INFO("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
 					current_point_.longitude,current_point_.latitude,current_point_.yaw,
 					target_point_.longitude,target_point_.latitude,dis_yaw.second);
 			ROS_INFO("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",
-					dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
+					dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);*/
 			ROS_INFO("target_index:%d\t size:%d\t traffic_dir:%d",target_point_index_, path_points_.size(),traffic_dir_);
 		} i++;	
 	}
@@ -275,7 +312,7 @@ void GridTracking::traffic_sign_callback(const driverless_msgs::TrafficSign::Con
 		traffic_dir_ = DIR_INVALID;
 }
 
-bool GridTracking::loadPathVertexes(const std::string& file_path,  gpsMsg_t path_vertexes[ROWS][COLS])
+bool GridTracking::loadPathVertexes(const std::string& file_path)
 {
 	FILE *fp = fopen(file_path.c_str(),"r");
 	if(fp==NULL)
@@ -283,22 +320,23 @@ bool GridTracking::loadPathVertexes(const std::string& file_path,  gpsMsg_t path
 		ROS_ERROR("open %s failed",file_path.c_str());
 		return false;
 	}
-	gpsMsg_t point;
-	int i=0;
 	
-	while(!feof(fp) && i< ROWS*COLS)
+	if(2 != fscanf(fp,"%lf\t%lf\n",&starting_point_.longitude,&starting_point_.latitude))
+		return false;
+	
+	for(int i=0; i<ROWS*COLS; i++)
 	{
-		fscanf(fp,"%lf\t%lf\t",&point.longitude,&point.latitude);
-		path_vertexes[0][i] = point;
-		i++;
+		gpsMsg_t point;
+		if(2 != fscanf(fp,"%lf\t%lf\n",&point.longitude,&point.latitude))
+			return false;
+		path_vertexes_[0][i] = point;
 	}
+	
+	if(2 !=fscanf(fp,"%lf\t%lf\n",&ending_point_.longitude,&ending_point_.latitude))
+		return false;
+
 	fclose(fp);
 	
-	if(i != ROWS*COLS)
-	{
-		ROS_ERROR("path vertex count error!!!");
-		return false;
-	}
 	return true;
 }
 
@@ -318,6 +356,11 @@ bool GridTracking::dumpPathPoints(const std::string& file_path, const std::vecto
 	fclose(fp);
 	
 	return true;
+}
+
+void GridTracking::dump_callback(const std_msgs::String::ConstPtr& msg)
+{
+	dumpPathPoints(msg->data,path_points_);
 }
 
 int main(int argc,char**argv)

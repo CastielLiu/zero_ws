@@ -3,6 +3,7 @@
 #include<ros/ros.h>
 #include<driverless_msgs/ControlCmd.h>
 #include<driverless_utils/driverless_utils.h>
+#include<std_msgs/String.h>
 #include<std_msgs/Int8.h>
 #include <limits.h>
 
@@ -21,12 +22,18 @@
 #define DIS_INCREMENT 0.1
 #define DIR_INVALID 255
 
-
-typedef struct 
+struct vertexIndex_t
 {
 	uint8_t row;
 	uint8_t col;
-} vertexIndex_t;
+	
+	bool equal_to(const vertexIndex_t& index)
+	{
+		if(this->row== index.row && this->col==index.col)
+			return true;
+		return false;
+	}
+};
 
 class GridTracking
 {
@@ -39,9 +46,13 @@ public:
 	void cmd_timer(const ros::TimerEvent&);
 	void gps_callback(const gps_msgs::Inspvax::ConstPtr& msg);
 	void traffic_sign_callback(const driverless_msgs::TrafficSign::ConstPtr &msg);
-	bool loadPathVertexes(const std::string& file_path, gpsMsg_t path_vertexes[ROWS][COLS]);
+	void dump_callback(const std_msgs::String::ConstPtr& msg);
+	
+	bool loadPathVertexes(const std::string& file_path);
 	void generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMsg_t>& path_points);
-	bool generateOriginPathPoints(std::vector<gpsMsg_t>& path_points);
+	bool generateStartPathPoints(std::vector<gpsMsg_t>& path_points);
+	bool generateEndPathPoints(std::vector<gpsMsg_t>& path_points);
+	
 	uint8_t generateCurrentDir(const vertexIndex_t& target_index, const vertexIndex_t& last_index);
 	bool updateTargetVertexIndex(uint8_t current_dir, uint8_t traffic_dir, vertexIndex_t& target_vertex_index);
 	bool dumpPathPoints(const std::string& file_path, const std::vector<gpsMsg_t>& path_points);
@@ -50,6 +61,7 @@ public:
 private:
 	ros::Subscriber sub_gps_;
 	ros::Subscriber sub_traffic_sign_;
+	ros::Subscriber sub_dump_;
 	
 	ros::Timer timer_;
 	ros::Publisher pub_cmd_;
@@ -62,6 +74,11 @@ private:
 	
 	gpsMsg_t current_point_;
 	gpsMsg_t target_point_;
+	
+	gpsMsg_t starting_point_;
+	gpsMsg_t ending_point_;
+	
+	vertexIndex_t end_vertex_index_;
 	
 	uint32_t target_point_index_;
 	

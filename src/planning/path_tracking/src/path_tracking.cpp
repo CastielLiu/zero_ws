@@ -53,7 +53,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	{
 		target_point_ = path_points_[target_point_index_];
 		
-		float current_distance = disBetween2Points(current_point_,target_point_);
+		float current_distance = disBetween2Points(current_point_,target_point_,CONSIDER_DIR);
 		
 		ROS_INFO("current_distance:%f",current_distance);
 

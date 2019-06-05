@@ -82,8 +82,11 @@ bool load_path_points(const std::string& file_path,std::vector<gpsMsg_t>& points
 
 float limitRoadwheelAngleBySpeed(const float& angle, const float& speed);
 float limitSpeedByPathCurvature(const float& speed,const float& curvature);
-float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end);
-std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end);
+
+#define CONSIDER_DIR true
+#define NON_DIR false
+float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end, bool orientation=false);
+std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end, bool orientation=false);
 
 #endif
 
