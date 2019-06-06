@@ -1,0 +1,13 @@
+<!-- -->
+<launch>
+
+
+
+     <node name="trigger_record_node" pkg="record_gps_data" type="trigger_record_node" output="screen">
+		<param name="file_name" value="$(find record_gps_data)/../gps_data/points.txt"/>
+	 </node>
+	
+
+	
+
+</launch>
