@@ -58,7 +58,7 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	{
 		target_point_ = path_points_[target_point_index_];
 		
-		float current_distance = disBetween2Points(current_point_,target_point_);
+		float current_distance = disBetween2Points(current_point_,target_point_,CONSIDER_DIR);
 		
 		ROS_INFO("current_distance:%f",current_distance);
 		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
@@ -193,7 +193,7 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 		ROS_INFO("updateTargetVertexIndex failed");
 		return;
 	}
-		
+
 	if(target_vertex_index_.row >= ROWS || target_vertex_index_.col >= COLS)
 	{
 		ROS_INFO("target_vertex_index_ error");
@@ -217,7 +217,6 @@ void GridTracking::generateNewPathPoints(uint8_t& traffic_dir, std::vector<gpsMs
 		path_points.push_back(point);
 	}
 	last_vertex_index_ = temp;
-	//dumpPathPoints("/home/wendao/projects/zero_ws/test.txt",path_points_);
 }
 
 void GridTracking::run()
