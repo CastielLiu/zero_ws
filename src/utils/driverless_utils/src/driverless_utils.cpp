@@ -55,7 +55,8 @@ float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end ,bool orienta
 	if(!orientation)
 		return dis;
 	
-	if(fabs(yaw- start.yaw)>90.0)
+	float yaw_err = fabs(yaw- start.yaw);
+	if(yaw_err > 90.0 && yaw_err <270.0)
 		dis *= -1;
 	return dis;
 }
@@ -75,7 +76,9 @@ std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end,
 	if(!orientation)
 		return dis_yaw;
 		
-	if(fabs(dis_yaw.second - start.yaw)>90.0)
+	float yaw_err = fabs(dis_yaw.second - start.yaw);
+	
+	if(yaw_err > 90.0 && yaw_err <270.0)
 		dis_yaw.first *= -1;
 	return dis_yaw;
 }
@@ -94,7 +97,6 @@ std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end,
 	
 	while(!feof(fp))
 	{
-
 		fscanf(fp,"%lf\t%lf\t",&point.longitude,&point.latitude);
 			
 		points.push_back(point);

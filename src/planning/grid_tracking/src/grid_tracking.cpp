@@ -64,10 +64,8 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
 				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
 		if(current_distance > 0)
-		{
-			target_point_ = path_points_[--target_point_index_];
 			break;
-		}
+			
 		target_point_index_++;
 	}
 	if(target_point_index_ == path_points_.size())

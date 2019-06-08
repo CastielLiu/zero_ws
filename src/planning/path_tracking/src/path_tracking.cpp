@@ -60,10 +60,7 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
 				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
 		if(current_distance > 0)
-		{
-            target_point_ = path_points_[target_point_index_];
 			break;
-		}
 		
 		target_point_index_++;
 	}
@@ -93,7 +90,7 @@ void PathTracking::run()
 		else
 			gps_controlCmd_.set_speed = speed_;
 		
-		if( dis_yaw.first < disThreshold_ || dis_yaw.first>50.0)
+		if( dis_yaw.first < disThreshold_)
 		{
 			target_point_index_ ++;
 			continue;

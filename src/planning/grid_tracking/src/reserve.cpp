@@ -13,6 +13,31 @@ GridTracking::GridTracking():
 
 GridTracking::~GridTracking(){}
 
+bool GridTracking::generatePathPoints(std::vector<gpsMsg_t>& path_points)
+{
+	int indexes[]={0,1,2,4,6,5,7,9};
+	
+	for(int i=0; i<sizeof(indexes)/sizeof(int)-1; i++)
+	{
+		gpsMsg_t start_point = path_vertexes_[indexes[i]];
+		gpsMsg_t end_point = path_vertexes_[indexes[i+1]];
+		
+		int points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
+		ROS_INFO("i:%d\t points_cnt:%d",i,points_cnt);
+	
+		double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
+		double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
+		for(size_t j=0; j<points_cnt; j++)
+		{
+			gpsMsg_t point;
+			point.longitude = start_point.longitude + longitude_increment *j;
+			point.latitude = start_point.latitude + latitude_increment *j;
+			path_points.push_back(point);
+		}
+	}
+	return true;
+}
+
 bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 {
 	sub_gps_ = nh.subscribe("/gps",1, &GridTracking::gps_callback,this);
@@ -57,10 +82,8 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 		printf("cur: %f\t%f\t tar: %f\t%f\r\n",
 				current_point_.longitude,current_point_.latitude,target_point_.longitude,target_point_.latitude);
 		if(current_distance > 0)
-		{
-			target_point_ = path_points_[--target_point_index_];
 			break;
-		}
+		
 		target_point_index_++;
 	}
 	if(target_point_index_ == path_points_.size())
@@ -195,30 +218,6 @@ bool GridTracking::dumpPathPoints(const std::string& file_path, const std::vecto
 	return true;
 }
 
-bool GridTracking::generatePathPoints(std::vector<gpsMsg_t>& path_points)
-{
-	int indexes[]={0,3,5,7,9};
-	
-	for(int i=0; i<sizeof(indexes)/sizeof(int)-1; i++)
-	{
-		gpsMsg_t start_point = path_vertexes_[indexes[i]];
-		gpsMsg_t end_point = path_vertexes_[indexes[i+1]];
-		
-		int points_cnt = disBetween2Points(start_point,end_point)/DIS_INCREMENT;
-		ROS_INFO("i:%d\t points_cnt:%d",i,points_cnt);
-	
-		double longitude_increment = (end_point.longitude - start_point.longitude)/points_cnt;
-		double latitude_increment  = (end_point.latitude - start_point.latitude)/points_cnt;
-		for(size_t j=0; j<points_cnt; j++)
-		{
-			gpsMsg_t point;
-			point.longitude = start_point.longitude + longitude_increment *j;
-			point.latitude = start_point.latitude + latitude_increment *j;
-			path_points.push_back(point);
-		}
-	}
-	return true;
-}
 
 void GridTracking::dump_callback(const std_msgs::String::ConstPtr& msg)
 {
