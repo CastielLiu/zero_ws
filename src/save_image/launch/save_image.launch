@@ -1,6 +1,7 @@
 <!-- -->
 
 <launch>
+ <arg name="num" default="0"/>
  <arg name="camera_num" default="1"/>
 
 	<node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen" args="$(arg camera_num)" >
@@ -8,7 +9,7 @@
 		<param name ="frame_rate" value="3"/>
 	</node>
 	
-	<node pkg="save_image" type="saveImage.py" name="saveIamge_node" args="$(find save_image)/image/" output="screen"/>
+	<node pkg="save_image" type="saveImage.py" name="saveIamge_node" args="$(find save_image)/image/ $(arg num)" output="screen"/>
 
 </launch>
 
