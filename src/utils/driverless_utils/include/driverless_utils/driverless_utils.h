@@ -10,16 +10,8 @@
 #include<ros/ros.h>
 #include<limits.h>
 #include<exception>
+#include"vehicle_params.h"
 
-
-#define WHEEL_DISTANCE  0.4
-#define AXIS_DISTANCE   0.7
-#define MAX_SPEED 5.0
-
-
-extern const float g_steering_gearRatio;
-extern const float g_vehicle_width;
-extern const float g_vehicle_length;
 
 typedef struct
 {
@@ -29,13 +21,7 @@ typedef struct
 }gpsMsg_t;
 
 
-inline float generateRoadwheelAngleByRadius(const float& radius)
-{
-	assert(radius!=0);
-	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
-	return -atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
-}
-
+float generateRoadwheelAngleByRadius(const float& radius);
 
 
 inline double sinDeg(const double& deg)

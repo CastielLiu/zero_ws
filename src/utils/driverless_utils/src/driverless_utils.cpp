@@ -1,15 +1,5 @@
 #include "driverless_utils/driverless_utils.h"
 
-#define MAX_STEERING_ANGLE 25.0
-#define MAX_ROAD_WHEEL_ANGLE 25.0
-
-//方向盘最大转角/前轮最大转角
-const float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
-
-const float g_vehicle_width = 0.45 ;// m
-const float g_vehicle_length = 0.70; 
-
-static const float max_side_acceleration = 1.9; // m/s/s
 
 float limitRoadwheelAngleBySpeed(const float& angle, const float& speed)
 {
@@ -59,6 +49,13 @@ float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end ,bool orienta
 	if(yaw_err > 90.0 && yaw_err <270.0)
 		dis *= -1;
 	return dis;
+}
+
+inline float generateRoadwheelAngleByRadius(const float& radius)
+{
+	assert(radius!=0);
+	//return asin(AXIS_DISTANCE /radius)*180/M_PI;  //the angle larger
+	return -atan(AXIS_DISTANCE/radius)*180/M_PI;    //correct algorithm 
 }
 
 std::pair<float, float> getDisAndYaw(const gpsMsg_t &start, const gpsMsg_t &end,bool orientation)

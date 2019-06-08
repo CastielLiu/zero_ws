@@ -1,0 +1,36 @@
+<!-- -->
+<launch>
+
+	<arg name="base_control_port" default="/dev/U5"/>   <!--底层can分析仪-->
+	<arg name="gps_port" default="/dev/ttyS2"/>		    <!-- GPS-->
+	<arg name="stm32_port" default="/dev/U6"/>          <!-- STM32-->
+	
+	<arg name="max_speed"  default="30.0"/>
+	
+<!--底层 -->	
+	<node name="base_control" pkg="little_ant" type="base_control" output="screen" respawn="true">
+		<param name ="obd_can_port_name" value="$(arg base_control_port)"/>
+		<param name ="stm32_port_name" value="$(arg stm32_port)"/>
+		<param name ="stm32_baudrate" value="115200"/>
+		<param name ="max_steering_speed" value="2.0"/> <!--前后帧转角最大差值 -->
+	</node>
+	
+	<node name="cmd_transform_node" pkg="to_little_ant" type="cmd_transform_node"/>
+	
+<!--GPS-->	
+	<node pkg="novatel" type="novatel_node" name="novatel_node"  respawn="true">
+
+		<param name="port" value="$(arg gps_port)" />
+		<param name="baudrate" value="115200" />
+		<param name="odom_topic" value="/gps_odom" />
+		
+		<param name="log_commands" value="inspvaxb ontime 0.05" />
+		<param name="gps_default_logs_period" value="0.0" />
+		<param name="span_default_logs_period" value="0.0" />
+		<param name="inspvax_topic" value = "/gps" />
+	</node>
+	
+</launch>
+
+
+

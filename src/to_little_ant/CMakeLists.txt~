@@ -11,7 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   little_ant_msgs
   sensor_msgs
   std_msgs
-  driverless_utils
 )
 
 
