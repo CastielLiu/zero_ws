@@ -15,7 +15,7 @@ GridTracking::~GridTracking(){}
 
 bool GridTracking::generatePathPoints(std::vector<gpsMsg_t>& path_points)
 {
-	int indexes[]={0,1,2,4,6,5,7,9};
+	int indexes[]={0,1,2,3};
 	
 	for(int i=0; i<sizeof(indexes)/sizeof(int)-1; i++)
 	{
@@ -70,7 +70,9 @@ bool GridTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	if(!generatePathPoints(path_points_))
 		return false;
 	
-	dumpPathPoints("/home/wendao/projects/zero_ws/src/planning/grid_tracking/vertex_file/a.txt",path_points_);
+	std::string dump_file_path = file_path_.substr(0,file_path_.find_last_of("/")+1) + "raw_path.txt";
+	//ROS_ERROR("%s",dump_file_path.c_str());
+	dumpPathPoints(dump_file_path,path_points_);
 
 	for(target_point_index_ =0; target_point_index_<path_points_.size(); )
 	{
@@ -133,11 +135,11 @@ void GridTracking::run()
 		
 		if(i%100==0)
 		{
-			/*ROS_INFO("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
+			ROS_INFO("%.7f,%.7f,%.2f\t%.7f,%.7f\t t_yaw:%f\n",
 					current_point_.longitude,current_point_.latitude,current_point_.yaw,
 					target_point_.longitude,target_point_.latitude,dis_yaw.second);
 			ROS_INFO("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",
-					dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);*/
+					dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
 		} i++;	
 	}
 	

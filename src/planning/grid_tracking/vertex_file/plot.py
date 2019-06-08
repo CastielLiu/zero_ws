@@ -20,7 +20,7 @@ with open(file_name,'r') as f:
 		g_latitudes.append(float(lat))
 
 
-plt.plot(g_longitudes,g_latitudes,'ro',lw=10)
+plt.plot(g_longitudes,g_latitudes,'r-o',lw=1)
 
 g_longitudes = []
 g_latitudes =[]

@@ -53,7 +53,9 @@ public:
 		
 		if(ONLY_KEYBORD==mode || KEYBORD_AND_MOUSE==mode)
 		{
-			keys_fd=open("/dev/input/event1",O_RDONLY & ~O_NONBLOCK);
+			//event1 wendao's vmware
+			//event7 little_ant computer
+			keys_fd=open("/dev/input/event7",O_RDONLY & ~O_NONBLOCK);
 			if(keys_fd<=0)
 			{
 				printf("open /dev/input/event1 failed !\n");
@@ -86,7 +88,6 @@ public:
 			is_ok = true;
 		else if(code == mouseEvent.code && status == mouseEvent.value)
 			is_ok = true;
-			
 		return is_ok;
 	}
 	

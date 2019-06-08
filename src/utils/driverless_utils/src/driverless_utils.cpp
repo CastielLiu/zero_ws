@@ -40,6 +40,7 @@ float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end ,bool orienta
 	
 	float dis = sqrt(x * x + y * y);
 	float yaw = atan2(x,y) *180.0/M_PI;
+	
 	if(yaw <0)
 		yaw += 360.0;
 	if(!orientation)
@@ -48,6 +49,7 @@ float disBetween2Points(const gpsMsg_t &start, const gpsMsg_t &end ,bool orienta
 	float yaw_err = fabs(yaw- start.yaw);
 	if(yaw_err > 90.0 && yaw_err <270.0)
 		dis *= -1;
+		
 	return dis;
 }
 

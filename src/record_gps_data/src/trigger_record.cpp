@@ -106,6 +106,7 @@ void Record::run()
 		if(keyEvent.keyMonitor(KeyEvent::KEY_Enter, KeyEvent::KEY_Up))
 			this->recordToFile();
 		usleep(30000);
+		
 	}
 }
 

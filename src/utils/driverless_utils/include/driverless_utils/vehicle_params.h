@@ -4,7 +4,7 @@
 #define ZERO_CAR 0
 #define LITTLE_ANT 1
 
-#define VEHICLE_MODEL ZERO_CAR
+#define VEHICLE_MODEL LITTLE_ANT
 
 #if VEHICLE_MODEL==ZERO_CAR
 
@@ -16,8 +16,8 @@
 	const float max_side_acceleration = 1.9; // m/s/s
 	
 #elif VEHICLE_MODEL==LITTLE_ANT
-	#define MAX_STEERING_ANGLE 540.0
-	#define MAX_ROAD_WHEEL_ANGLE 25.0
+	#define MAX_STEERING_ANGLE 450.0
+	#define MAX_ROAD_WHEEL_ANGLE 20.0
 	
 	#define AXIS_DISTANCE   1.5
 
