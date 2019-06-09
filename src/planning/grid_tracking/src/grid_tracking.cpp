@@ -3,7 +3,7 @@
 
 GridTracking::GridTracking():
 	is_trafficLightGreen_(true),
-	traffic_dir_(driverless_msgs::TrafficSign::DirectDir),
+	traffic_dir_(DIR_INVALID),
 	is_gps_ok(false)
 {
 	target_point_index_=0;
@@ -305,8 +305,6 @@ void GridTracking::traffic_sign_callback(const driverless_msgs::TrafficSign::Con
 	
 	if(msg->direction_validity)
 		traffic_dir_ = msg->direction;
-	else
-		traffic_dir_ = DIR_INVALID;
 }
 
 bool GridTracking::loadPathVertexes(const std::string& file_path)
