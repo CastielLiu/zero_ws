@@ -1,0 +1,16 @@
+<!-- -->
+<launch>
+
+
+
+     <node name="show_gps_data_node" pkg="record_gps_data" type="show_gps_data_node" output="screen">
+	 </node>
+	
+	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
+	
+		<param name ="port_name"   value="/dev/ttyUSB0"/>
+		<param name ="baudrate"    value="115200"/>
+	</node>
+	
+
+</launch>
