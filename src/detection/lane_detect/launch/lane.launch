@@ -1,0 +1,10 @@
+<!-- wendao   -->
+<launch>
+	<node name="lane_detect_node" pkg="lane_detect" type="lane_detect.py" >
+		<param name="is_debug" value="false" />
+		<param name="is_reconfig" value="false" />
+	</node>
+	
+	<node name="show_result" pkg="lane_detect" type="show_result.py" />
+	
+</launch>

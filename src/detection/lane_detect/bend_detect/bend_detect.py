@@ -215,8 +215,10 @@ class LaneDetect():
 	#---------------------------------------------------------------------------------------#
 	def processing(self,frame,show_result=False):
 		
-		wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-		thresholded = self.thresholding(wraped)
+		#wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		#thresholded = self.thresholding(wraped)
+		thresholded = self.thresholding(frame)
+		
 		if self.__left_line.detected and self.__right_line.detected:
 			left_fit, right_fit = self.find_line_by_previous(thresholded)
 		else:
@@ -433,7 +435,8 @@ class image_converter:
 	def config_callback(self,config, level):
 		self.lane_detect.setThreshold(config)
 		return config
-	
+
+
 
 def main(args):
 	rospy.init_node('lane_detect')
@@ -448,7 +451,6 @@ def main(args):
 	if is_debug is not None:
 		ic.lane_detect.setDebug(is_debug)
 
-		
 	try:
 		rospy.spin()
 	except KeyboardInterrupt:
