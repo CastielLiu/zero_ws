@@ -10,6 +10,7 @@ import os
 import numpy as np
 from driverless_msgs.msg import Lane
 from driverless_msgs.msg import DrawArea
+import matplotlib.pyplot as plt
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -192,8 +193,8 @@ class LaneDetect():
 		
 	def thresholding(self,img):
 		x_thresh = self.abs_sobel_thresh(img, orient='x')
-		cv2.line(x_thresh,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),10)
-		cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
+		#cv2.line(x_thresh,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),10)
+		#cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
 	
 		hls_thresh_l = self.hls_select(img,channel='l')
 		hls_thresh_s = self.hls_select(img,channel='s')
@@ -215,9 +216,9 @@ class LaneDetect():
 	#---------------------------------------------------------------------------------------#
 	def processing(self,frame,show_result=False):
 		
-		#wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-		#thresholded = self.thresholding(wraped)
-		thresholded = self.thresholding(frame)
+		wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		thresholded = self.thresholding(wraped)
+		#thresholded = self.thresholding(frame)
 		
 		if self.__left_line.detected and self.__right_line.detected:
 			left_fit, right_fit = self.find_line_by_previous(thresholded)
@@ -255,6 +256,11 @@ class LaneDetect():
 	def find_line(self,binary_warped):
 		# Take a histogram of the bottom half of the image
 		histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
+		#print(histogram, len(histogram))
+		plt.cla()
+		plt.plot(range(len(histogram))[:],histogram)
+		plt.pause(0.01)
+		
 		# Find the peak of the left and right halves of the histogram
 		# These will be the starting point for the left and right lines
 		midpoint = np.int(histogram.shape[0] / 2)
@@ -366,46 +372,43 @@ class LaneDetect():
 
 		return lane_width,distance_from_center,angle,validity
 
-	def draw_area(self,undist,left_fit,right_fit):
-	
-		Ax = np.polyval(left_fit, 0)
-		Bx = np.polyval(right_fit,0)
-		Cx = np.polyval(right_fit,undist.shape[0])
-		Dx = np.polyval(left_fit,undist.shape[0])
+	#------------------------------------------------------------------------------------#
+	def draw_area(self, undist, binary_warped, Minv, left_fit, right_fit):
+		# Generate x and y values for plotting
+		ploty = np.linspace(0, binary_warped.shape[0] - 1, binary_warped.shape[0])
+		left_fitx = left_fit[0] * ploty ** 2 + left_fit[1] * ploty + left_fit[2]
+		right_fitx = right_fit[0] * ploty ** 2 + right_fit[1] * ploty + right_fit[2]
+		# Create an image to draw the lines on
+		warp_zero = np.zeros_like(binary_warped).astype(np.uint8)
+		color_warp = np.dstack((warp_zero, warp_zero, warp_zero))
 
-		A = [Ax,0]
-		B = [Bx,0]
-		C = [Cx,undist.shape[0]]
-		D = [Dx,undist.shape[0]]
+		# Recast the x and y points into usable format for cv2.fillPoly()
+		pts_left = np.array([np.transpose(np.vstack([left_fitx, ploty]))])
+		pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, ploty])))])
+		pts = np.hstack((pts_left, pts_right))
 
-		rect = np.array([[A,B,C,D]]).astype(np.int)
-		pure = np.zeros_like(undist)
-		cv2.fillPoly(pure, rect, (0, 255, 0))
+		# Draw the lane onto the warped blank image
+		cv2.fillPoly(color_warp, np.int_([pts]), (0, 255, 0))
 
 		# Warp the blank back to original image space using inverse perspective matrix (Minv)
-		newwarp = cv2.warpPerspective(pure, self.__Minv, (undist.shape[1], undist.shape[0]))
+		newwarp = cv2.warpPerspective(color_warp, Minv, (undist.shape[1], undist.shape[0]))
 		# Combine the result with the original image
 		result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
 		return result
 
-	def draw_values(self,img, distance_from_center,angle):
+
+	def draw_values(self, img, curvature, distance_from_center):
 		font = cv2.FONT_HERSHEY_SIMPLEX
-		#radius_text = "Radius of Curvature: %sm" % (round(curvature))
+		radius_text = "Radius of Curvature: %sm" % (round(curvature))
 
 		if distance_from_center > 0:
 			pos_flag = 'right'
 		else:
 			pos_flag = 'left'
 
-		#cv2.putText(img, radius_text, (100, 100), font, 1, (255,0,255), 2)
+		cv2.putText(img, radius_text, (100, 100), font, 1, (255, 255, 255), 2)
 		center_text = "Vehicle is %.3fm %s of center" % (abs(distance_from_center), pos_flag)
-		cv2.putText(img, center_text, (100, 150), font, 1, (255, 0, 255), 2)
-		#langle_text="left angle is:%.3f"%(left_angle*180/math.pi)
-		#cv2.putText(img,langle_text,(100,200),font,1,(255,0,255),2)
-		#rangle_text="right angle is:%.3f"%(right_angle*180/math.pi)
-		#cv2.putText(img,rangle_text,(100,250),font,1,(255,0,255),2)
-		angle_text="angle is %.3f"%(angle*180/math.pi)
-		cv2.putText(img,angle_text,(100,200),font,1,(255,0,255),2)
+		cv2.putText(img, center_text, (100, 150), font, 1, (255, 255, 255), 2)
 		return img
 		
 class image_converter:
