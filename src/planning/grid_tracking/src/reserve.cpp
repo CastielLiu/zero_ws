@@ -15,7 +15,7 @@ GridTracking::~GridTracking(){}
 
 bool GridTracking::generatePathPoints(std::vector<gpsMsg_t>& path_points)
 {
-	int indexes[]={0,1,2,3};
+	int indexes[]={0,7,3,4,5,2,9};
 	
 	for(int i=0; i<sizeof(indexes)/sizeof(int)-1; i++)
 	{
@@ -107,7 +107,7 @@ void GridTracking::run()
 			
 		target_point_ = path_points_[target_point_index_];
 		
-		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_,CONSIDER_DIR);
+		std::pair<float, float> dis_yaw = getDisAndYaw(current_point_,target_point_);
 		
 		if( dis_yaw.first < disThreshold_)
 		{
@@ -143,6 +143,8 @@ void GridTracking::run()
 		} i++;	
 	}
 	
+	ROS_INFO("grid_tracking_node complete...");
+	
 	while(ros::ok())
 	{
 		cmd_.set_speed = 0.0;
@@ -150,7 +152,7 @@ void GridTracking::run()
 		usleep(100000);
 	}
 	
-	ROS_INFO("grid_tracking_node complete...");
+	
 }
 
 

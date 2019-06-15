@@ -1,12 +1,15 @@
 <!-- -->
 <launch>
 
-	
 	<node name="reserve_node" pkg="grid_tracking" type="reserve_node" output="screen">
-		<param name="file_path" value="$(find grid_tracking)/vertex_file/data.txt"/>
+		<param name="file_path" value="$(find grid_tracking)/vertex_file/vertexes.txt"/>
 		<param name="disThreshold" value="5.0"/>
-		<param name="tracking_speed" value="2.0"/>
+		<param name="tracking_speed" value="6.0"/>
     </node>
+    
+	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node" >
+		<param name="path_points_file" value="$(find grid_tracking)/vertex_file/trajectory.txt"/>
+	</node>
       
 </launch>
 

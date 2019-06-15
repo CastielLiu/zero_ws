@@ -1,8 +1,22 @@
 <!-- -->
 <launch>
+	<arg name="is_novatel" default="false"/>
+
 	<node name="trigger_record_node" pkg="record_gps_data" type="trigger_record_node" output="screen">
-		<param name="file_name" value="$(find record_gps_data)/../gps_data/points.txt"/>
+		<param name="file_name" value="$(find grid_tracking)/vertex_file/vertexes.txt"/>
 		<param name="min_sample_distance" value="0.1"/>
 	</node>
 	
+	<group if="$(arg is_novatel)">
+		<node pkg="novatel" type="novatel_node" name="novatel_node" required="true">
+			<param name="port" value="/dev/ttyS2" />
+			<param name="baudrate" value="115200" />
+			<param name="odom_topic" value="/gps_odom" />
+			<param name="log_commands" value="inspvaxb ontime 0.05" />
+			<param name="gps_default_logs_period" value="0.0" />
+			<param name="span_default_logs_period" value="0.0" />
+			<param name="inspvax_topic" value = "/gps" />
+		</node>
+	
+	</group>
 </launch>

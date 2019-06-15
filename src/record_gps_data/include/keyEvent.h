@@ -55,13 +55,15 @@ public:
 		{
 			//event1 wendao's vmware
 			//event7 little_ant computer
-			keys_fd=open("/dev/input/event7",O_RDONLY & ~O_NONBLOCK);
+			
+			const char key_device[] = "/dev/input/event4";
+			keys_fd=open(key_device, O_RDONLY & ~O_NONBLOCK);
 			if(keys_fd<=0)
 			{
-				printf("open /dev/input/event1 failed !\n");
+				printf("open %s failed !\n",key_device);
 				return false;
 			}
-			printf("open /dev/input/event1 ok !\n");
+			printf("open %s ok !\n",key_device);
 		}
 		if(ONLY_MOUSE==mode || KEYBORD_AND_MOUSE==mode)
 		{

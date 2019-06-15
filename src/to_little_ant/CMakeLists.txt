@@ -1,4 +1,4 @@
-set(MAKE_THIS_PKG 0)
+set(MAKE_THIS_PKG 1)
 
 if(MAKE_THIS_PKG)
 
