@@ -78,14 +78,14 @@ class LaneDetect():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 120				##@param
-		self.__draw_y = 359					##@param  
+		self.__cut_height = 0				##@param
+		self.__draw_y = 355					##@param  
 		self.__offset = 180 #pixel
 		self.__angleOffset = 1.1/180.0*np.pi##@param 
-		self.__A = (0,452)					##@param
-		self.__B = (271,self.__cut_height)	##@param
-		self.__C = (373,self.__cut_height)	##@param
-		self.__D = (638,452)				##@param
+		self.__A = (10,328)					##@param
+		self.__B = (278,self.__cut_height)	##@param
+		self.__C = (378,self.__cut_height)	##@param
+		self.__D = (639,328)				##@param
 		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
 		self.__B_ = (self.__A[0]+self.__offset, 0)
 		self.__C_ = (self.__D[0]-self.__offset,0)
@@ -95,7 +95,7 @@ class LaneDetect():
 		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
 		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
 		self.__xmPerPixel = 0.90/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 4.34/(self.__D_[1]-self.__C_[1])	##@param
+		self.__ymPerpixel = 5.4/(self.__D_[1]-self.__C_[1])	##@param
 		self.__left_line = Line()
 		self.__right_line= Line()
 		self.__sobel_thresh_x = (57,255)
@@ -120,7 +120,7 @@ class LaneDetect():
 		self.__l_thresh = (config.l_thresh_min,config.l_thresh_max)
 		self.__s_thresh = (config.s_thresh_min,config.s_thresh_max)
 		
-		self.__dir_thresh = (config.dir_thresh_min,config.dir_thresh_max)
+		#self.__dir_thresh = (config.dir_thresh_min,config.dir_thresh_max)
 		self.__luv_l_thresh = (config.luv_l_thresh_min,config.luv_l_thresh_max)
 		self.__mag_thresh = (config.mag_thresh_min,config.mag_thresh_max)
 	
@@ -203,7 +203,6 @@ class LaneDetect():
 		
 	def thresholding(self,img):
 		#x_thresh = self.abs_sobel_thresh(img, orient='x')
-		#cv2.line(x_thresh,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),10)
 		#cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
 	
 		hls_thresh_l = self.hls_select(img,channel='l')
@@ -227,6 +226,9 @@ class LaneDetect():
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
 		
+		cv2.line(thresholded,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),20)
+		cv2.line(thresholded,(self.__image_width,self.__draw_y),(self.__image_width - self.__offset,self.__image_height),(0,0,0),20)
+		
 		if self.__debug:
 			cv2.imshow("top2down",img)
 			#cv2.imshow('x_thresh',x_thresh)
@@ -245,9 +247,9 @@ class LaneDetect():
 	#---------------------------------------------------------------------------------------#
 	def processing(self,frame,show_result=False):
 		
-		#wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-		#thresholded = self.thresholding(wraped)
-		thresholded = self.thresholding(frame)
+		wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		thresholded = self.thresholding(wraped)
+		#thresholded = self.thresholding(frame)
 		
 
 		if self.__left_line.detected and self.__right_line.detected:
@@ -260,10 +262,17 @@ class LaneDetect():
 		self.area.left_fit = left_fit 
 		self.area.right_fit = right_fit
 		
+		#frame = frame[thresholded!=0] = (0,0,255)
+		
 		if show_result:
+			#area_img = self.draw_area(wraped,left_fit,right_fit,False)
+			#result = self.draw_values(area_img,pos_from_center,angle)
+			#cv2.imshow("result",area_img)
+			
 			area_img = self.draw_area(frame,left_fit,right_fit)
-			result = self.draw_values(area_img,pos_from_center,angle)
-			cv2.imshow("result",result)
+			#result = self.draw_values(area_img,pos_from_center,angle)
+			cv2.imshow("result1",area_img)
+			
 			cv2.waitKey(1)
 			
 		msg = Lane()
@@ -285,11 +294,10 @@ class LaneDetect():
 		
 	def find_line(self,binary_warped):
 		# Take a histogram of the bottom half of the image
-		
-		
 		#histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
 		
-		ROI = binary_warped[binary_warped.shape[0] // 5:, :]
+		cut_height = binary_warped.shape[0] // 3
+		ROI = binary_warped[cut_height:, :]
 		
 		wight = np.array(range(ROI.shape[0])).reshape(ROI.shape[0],1)
 		
@@ -320,7 +328,7 @@ class LaneDetect():
 		# Set the width of the windows +/- margin
 		margin = 50
 		# Set minimum number of pixels found to recenter window
-		minpix = 100
+		minpix = 20
 		# Create empty lists to receive left and right lane pixel indices
 		left_lane_inds = []
 		right_lane_inds = []
@@ -367,20 +375,21 @@ class LaneDetect():
 		
 		# Extract left and right line pixel positions
 		leftx = nonzerox[left_lane_inds]
-		lefty = nonzeroy[left_lane_inds]
+		lefty = nonzeroy[left_lane_inds] + cut_height
 		rightx = nonzerox[right_lane_inds]
-		righty = nonzeroy[right_lane_inds]
+		righty = nonzeroy[right_lane_inds] +cut_height
 
 		# Fit a second order polynomial to each
 		
-		left_fit  = np.polyfit(lefty , leftx, 2)
-		right_fit = np.polyfit(righty, rightx, 2)
+		left_fit  = np.polyfit(lefty , leftx, 1)
+		right_fit = np.polyfit(righty, rightx, 1)
 
 		"""
 		plt.figure(1)
+		plt.cla()
 		plt.plot(leftx,640-lefty,'.')
 		plt.plot(rightx,640-righty,'.')
-		plt.pause(0.01)
+		
 		
 		y = np.array(range(ROI.shape[0]))
 		x_l = np.polyval(left_fit,y)
@@ -389,7 +398,9 @@ class LaneDetect():
 		
 		plt.plot(x_l,640-y,'--',lw=3)
 		plt.plot(x_r,640-y,'--',lw=3)
+		plt.pause(0.01)
 		"""
+		#print(left_fit,right_fit)
 		return left_fit, right_fit 
 
 
@@ -439,7 +450,7 @@ class LaneDetect():
 
 		return lane_width,distance_from_center,angle,validity
 
-	def draw_area(self,undist,left_fit,right_fit):
+	def draw_area(self,undist,left_fit,right_fit,is_project=True):
 	
 		Ax = np.polyval(left_fit, 0)
 		Bx = np.polyval(right_fit,0)
@@ -454,11 +465,11 @@ class LaneDetect():
 		rect = np.array([[A,B,C,D]]).astype(np.int)
 		pure = np.zeros_like(undist)
 		cv2.fillPoly(pure, rect, (0, 255, 0))
-
-		# Warp the blank back to original image space using inverse perspective matrix (Minv)
-		newwarp = cv2.warpPerspective(pure, self.__Minv, (undist.shape[1], undist.shape[0]))
+		if(is_project):
+			# Warp the blank back to original image space using inverse perspective matrix (Minv)
+			pure = cv2.warpPerspective(pure, self.__Minv, (undist.shape[1], undist.shape[0]))
 		# Combine the result with the original image
-		result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+		result = cv2.addWeighted(undist, 1, pure, 0.3, 0)
 		return result
 
 	def draw_values(self,img, distance_from_center,angle):
