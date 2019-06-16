@@ -247,15 +247,15 @@ class LaneDetect():
 	#---------------------------------------------------------------------------------------#
 	def processing(self,frame,show_result=False):
 		
-		wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
-		thresholded = self.thresholding(wraped)
-		#thresholded = self.thresholding(frame)
+		#wraped = cv2.warpPerspective(frame,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		#thresholded = self.thresholding(wraped)
 		
-
-		if self.__left_line.detected and self.__right_line.detected:
-			left_fit, right_fit = self.find_line_by_previous(thresholded)
-		else:
-			left_fit, right_fit = self.find_line(thresholded)
+		thresholded = self.thresholding(frame)
+		thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		
+		#cv2.imshow("???",thresholded*255)
+		
+		left_fit, right_fit = self.find_line(thresholded, cut_height= np.int(thresholded.shape[0] *3/4))
 
 		lane_width,pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
 		
@@ -292,11 +292,10 @@ class LaneDetect():
 			index += 1
 	
 		
-	def find_line(self,binary_warped):
+	def find_line(self,binary_warped, cut_height):
 		# Take a histogram of the bottom half of the image
 		#histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
 		
-		cut_height = binary_warped.shape[0] // 3
 		ROI = binary_warped[cut_height:, :]
 		
 		wight = np.array(range(ROI.shape[0])).reshape(ROI.shape[0],1)
@@ -381,17 +380,17 @@ class LaneDetect():
 
 		# Fit a second order polynomial to each
 		
-		left_fit  = np.polyfit(lefty , leftx, 1)
-		right_fit = np.polyfit(righty, rightx, 1)
+		left_fit  = np.polyfit(lefty , leftx, 2)
+		right_fit = np.polyfit(righty, rightx, 2)
 
-		"""
+		 
 		plt.figure(1)
 		plt.cla()
 		plt.plot(leftx,640-lefty,'.')
 		plt.plot(rightx,640-righty,'.')
 		
 		
-		y = np.array(range(ROI.shape[0]))
+		y = np.array(range(binary_warped.shape[0]))[cut_height:]
 		x_l = np.polyval(left_fit,y)
 		x_r = np.polyval(right_fit,y)
 		
@@ -399,7 +398,7 @@ class LaneDetect():
 		plt.plot(x_l,640-y,'--',lw=3)
 		plt.plot(x_r,640-y,'--',lw=3)
 		plt.pause(0.01)
-		"""
+		 
 		#print(left_fit,right_fit)
 		return left_fit, right_fit 
 
