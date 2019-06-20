@@ -25,15 +25,18 @@ class Video2ROS():
 				print('open %s ok.' %self.videoPath )
 			else:
 				print('open %s failed!' %self.videoPath )
+				return
+				
 			while(cap.isOpened()):
 				ret,cv_image = cap.read()
-		
+				if not ret:
+					break
 				image_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
 				self.pub.publish(image_msg)
 				time.sleep(0.05)
 				if rospy.is_shutdown():
 					return
-	
+			cap.release()
 		
 def main(argv):
 	if(len(argv)>1):
