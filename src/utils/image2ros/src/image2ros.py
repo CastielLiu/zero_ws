@@ -13,11 +13,14 @@ import time
 
 class Image2ROS():
 	
-	def __init__(self,path):
+	def __init__(self,argv):
 		rospy.init_node('image_to_ros')
 		self.bridge = CvBridge()
 		self.pub = rospy.Publisher("/image_rectified",Image,queue_size=1)
-		self.imagePath = path
+		self.imagePath = argv[1]
+		self.frameRate = int(argv[2])
+		self.is_waitKey = int(argv[3])
+		
 	def run(self):
 		image_names = os.listdir(self.imagePath)
 		
@@ -33,14 +36,20 @@ class Image2ROS():
 				cv_image = cv2.imread(image_file)				
 				image_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
 				self.pub.publish(image_msg)
-				time.sleep(0.05)
 				if rospy.is_shutdown():
 					return
-	
+					
+				cv2.imshow("image",cv_image)
+				if self.is_waitKey:
+					key = cv2.waitKey(0)
+				else:
+					key = cv2.waitKey(int(1000.0/self.frameRate))
+				if(113 == key):
+					return
 		
 def main(argv):
 	if(len(argv)>1):
-		image2ros = Image2ROS(argv[1])
+		image2ros = Image2ROS(argv)
 		image2ros.run()
 	else:
 		print('please input the file path')

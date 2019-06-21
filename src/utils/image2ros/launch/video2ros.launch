@@ -1,0 +1,11 @@
+<!-- -->
+
+<launch>
+	<arg name="video" />
+	<arg name="rate" default="20"/>
+	<arg name="waitKey" default="0"/>
+
+	<node pkg="image2ros" type="video2ros.py" name="video2ros" args="$(arg video) $(arg rate) $(arg waitKey)" output="screen"/>
+
+</launch>
+

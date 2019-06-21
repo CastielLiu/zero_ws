@@ -13,12 +13,19 @@ import time
 
 class Video2ROS():
 	
-	def __init__(self,path):
+	def __init__(self,argv):
 		rospy.init_node('video_to_ros')
 		self.bridge = CvBridge()
 		self.pub = rospy.Publisher("/image_rectified",Image,queue_size=1)
-		self.videoPath = path
+		self.videoPath = argv[1]
+		self.frameRate = int(argv[2])
+		self.is_waitKey = int(argv[3])
+		print('video path: %s' %self.videoPath)
+		print('frameRate: %d' %self.frameRate)
+		print('is waitKey: %d' %self.is_waitKey)
+		
 	def run(self):
+		cap = None
 		while True:
 			cap = cv2.VideoCapture(self.videoPath )
 			if cap is not None:
@@ -33,18 +40,29 @@ class Video2ROS():
 					break
 				image_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
 				self.pub.publish(image_msg)
-				time.sleep(0.05)
 				if rospy.is_shutdown():
 					return
+				cv2.imshow("image",cv_image)
+				
+				if self.is_waitKey:
+					key = cv2.waitKey(0)
+				else:
+					key = cv2.waitKey(int(1000.0/self.frameRate))
+				if(113 == key):
+					return
+				
+			cap.release()
+			cap = None
+		if cap is not None:
 			cap.release()
 		
 def main(argv):
 	if(len(argv)>1):
-		video2ros = Video2ROS(argv[1])
+		video2ros = Video2ROS(argv)
 		video2ros.run()
 	else:
 		print('please input the video path')
-	
+
 if __name__ == '__main__':
 	main(sys.argv)
 	
