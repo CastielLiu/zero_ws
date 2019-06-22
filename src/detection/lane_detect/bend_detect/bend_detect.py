@@ -21,13 +21,30 @@ from sensor_msgs.msg import CameraInfo
 import  matplotlib.pyplot  as plt
 
 #camera params
+g_imageSize = [640,480]
 g_cameraParam_fx = None
 g_cameraParam_fy = None
 g_cameraParam_cx = None
 g_cameraParam_cy = None
 g_is_camera_info_ok = False
+g_pixel2dis_x = [None]*g_imageSize[0]
+g_pixel2dis_y = [None]*g_imageSize[1]
 
-
+def generatePixel2dis(h,l0,fx,fy,cx,cy):
+	cx = int(cx + 0.5)
+	cy = int(cy + 0.5)
+	y_theta = [0]* (g_imageSize[1]-cy+1)
+	alpha = y_theta[:]
+	dis = y_theta[:]
+	y_theta[0] = math.atan(h/lo)
+	for i in range(cy)[1:]:
+		alpha[i] = math.pi/4 - math.atan(i*fy)
+		y_theta[i] = y_theta[i-1] - alpha[i]
+		dis[i] = h/math.tan(y_theta[i])
+		g_pixel2dis_y[cy-i] = dis[i]
+	for j in range(g_imageSize[1] - cy)[1:]:
+		
+	
 
 # Define a class to receive the characteristics of each line detection
 class Line():
