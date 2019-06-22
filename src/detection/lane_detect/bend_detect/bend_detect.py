@@ -22,29 +22,40 @@ import  matplotlib.pyplot  as plt
 
 #camera params
 g_imageSize = [640,480]
-g_cameraParam_fx = None
-g_cameraParam_fy = None
-g_cameraParam_cx = None
-g_cameraParam_cy = None
 g_is_camera_info_ok = False
 g_pixel2dis_x = [None]*g_imageSize[0]
 g_pixel2dis_y = [None]*g_imageSize[1]
 
-def generatePixel2dis(h,l0,fx,fy,cx,cy):
-	cx = int(cx + 0.5)
+def generatePixel2disTable(h,l0,fx,fy,cx,cy):
+	global g_pixel2dis_y
+	global g_pixel2dis_x
 	cy = int(cy + 0.5)
-	y_theta = [0]* (g_imageSize[1]-cy+1)
-	alpha = y_theta[:]
-	dis = y_theta[:]
-	y_theta[0] = math.atan(h/lo)
-	for i in range(cy)[1:]:
-		alpha[i] = math.pi/4 - math.atan(i*fy)
-		y_theta[i] = y_theta[i-1] - alpha[i]
-		dis[i] = h/math.tan(y_theta[i])
-		g_pixel2dis_y[cy-i] = dis[i]
-	for j in range(g_imageSize[1] - cy)[1:]:
-		
+	theta0 = math.atan(h/l0)
+	g_pixel2dis_y[cy] = l0
 	
+	for v in range(g_imageSize[1]):
+		alpha = math.atan((cy-v)/fy)
+		theta = theta0 - alpha
+		y = h/math.tan(theta)
+		g_pixel2dis_y[v] = y
+		l = math.sqrt(y*y+ h*h)
+		for u in range(g_imageSize[0]):
+			x = l* (u-cx)/fx
+			g_pixel2dis_x[u][v] = x
+			print(x,y)
+"""
+def Pixel2dis(u,v):
+	#v dir
+	alpha = math.atan((cy-v)/fy)
+	theta = theta0-alpha 
+	y = h/math.tan(theta)
+	l = math.sqrt(y*y+h*h)
+	#u dir
+	#beta = math.atan((u-cx)/fx)
+	#x = l * math.tan(beta)
+	x = l* (u-cx)/fx
+	return x,y
+"""
 
 # Define a class to receive the characteristics of each line detection
 class Line():
@@ -548,17 +559,15 @@ def cameraInfo_callback(in_message):
 	
 	if g_is_camera_info_ok:
 		return
-	global g_cameraParam_fx
-	global g_cameraParam_fy
-	global g_cameraParam_cx
-	global g_cameraParam_cy
 	
 	g_is_camera_info_ok = True
-	g_cameraParam_fx = in_message.P[0]
-	g_cameraParam_fy = in_message.P[5]
-	g_cameraParam_cx = in_message.P[2]
-	g_cameraParam_cy = in_message.P[6]
-	print(g_cameraParam_fx)
+	fx = in_message.P[0]
+	fy = in_message.P[5]
+	cx = in_message.P[2]
+	cy = in_message.P[6]
+	h = 0.5
+	l0 = 1.1
+	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 
 def main(args):
 	rospy.init_node('lane_detect')
