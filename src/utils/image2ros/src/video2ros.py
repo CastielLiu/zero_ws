@@ -25,7 +25,6 @@ class Video2ROS():
 		print('is waitKey: %d' %self.is_waitKey)
 		
 	def run(self):
-		cap = None
 		while True:
 			cap = cv2.VideoCapture(self.videoPath )
 			if cap is not None:
@@ -39,6 +38,7 @@ class Video2ROS():
 				if not ret:
 					break
 				image_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
+				image_msg.header.stamp = rospy.Time().now()
 				self.pub.publish(image_msg)
 				if rospy.is_shutdown():
 					return
@@ -49,12 +49,11 @@ class Video2ROS():
 				else:
 					key = cv2.waitKey(int(1000.0/self.frameRate))
 				if(113 == key):
+					cap.release()
 					return
 				
 			cap.release()
-			cap = None
-		if cap is not None:
-			cap.release()
+			
 		
 def main(argv):
 	if(len(argv)>1):

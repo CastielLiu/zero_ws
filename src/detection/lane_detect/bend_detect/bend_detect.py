@@ -1,12 +1,12 @@
 #!/usr/bin/python  
 from __future__ import print_function
 import roslib
-#roslib.load_manifest('my_package')
 import sys
 import rospy
 import cv2
 import math
 import os
+import time
 import numpy as np
 from driverless_msgs.msg import Lane
 from driverless_msgs.msg import DrawArea
@@ -17,8 +17,16 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from dynamic_reconfigure.server import Server
 from param_config.cfg import lane_detectConfig
-
+from sensor_msgs.msg import CameraInfo
 import  matplotlib.pyplot  as plt
+
+#camera params
+g_cameraParam_fx = None
+g_cameraParam_fy = None
+g_cameraParam_cx = None
+g_cameraParam_cy = None
+g_is_camera_info_ok = False
+
 
 
 # Define a class to receive the characteristics of each line detection
@@ -126,7 +134,6 @@ class LaneDetect():
 	
 	def setDebug(self,status):
 		self.__debug = status
-
 		
 	def abs_sobel_thresh(self,img,orient='x'):
 		gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
@@ -383,7 +390,7 @@ class LaneDetect():
 		left_fit  = np.polyfit(lefty , leftx, 2)
 		right_fit = np.polyfit(righty, rightx, 2)
 
-		 
+		
 		plt.figure(1)
 		plt.cla()
 		plt.plot(leftx,640-lefty,'.')
@@ -519,12 +526,29 @@ class image_converter:
 		self.lane_detect.setThreshold(config)
 		return config
 
-
+def cameraInfo_callback(in_message):
+	global g_is_camera_info_ok
+	
+	if g_is_camera_info_ok:
+		return
+	global g_cameraParam_fx
+	global g_cameraParam_fy
+	global g_cameraParam_cx
+	global g_cameraParam_cy
+	
+	g_is_camera_info_ok = True
+	g_cameraParam_fx = in_message.P[0]
+	g_cameraParam_fy = in_message.P[5]
+	g_cameraParam_cx = in_message.P[2]
+	g_cameraParam_cy = in_message.P[6]
+	print(g_cameraParam_fx)
 
 def main(args):
 	rospy.init_node('lane_detect')
 	is_debug = rospy.get_param('~is_debug')
 	is_reconfig = rospy.get_param('~is_reconfig')
+	
+	cameraInfo_sub = rospy.Subscriber("/camera_info",CameraInfo, cameraInfo_callback)
 	
 	if is_reconfig is None:
 		ic = image_converter()

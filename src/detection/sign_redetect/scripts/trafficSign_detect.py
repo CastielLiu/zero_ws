@@ -20,10 +20,12 @@ class ObjectConvert():
 		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
 		self.object_sub = rospy.Subscriber("/detection/image_detector/objects",DetectedObjectArray,self.object_callback)
 		self.cvImage = None
+		self.cvImageStamp = rospy.Time().now()
 		
 	def image_callback(self,rosImage):
 		try:
 			self.cvImage = self.bridge.imgmsg_to_cv2(rosImage, "bgr8")
+			self.cvImageStamp = rosImage.header.stamp
 		except CvBridgeError as e:
 			print(e)
 			return
@@ -31,6 +33,10 @@ class ObjectConvert():
 	def object_callback(self,in_objects):
 		if self.cvImage is None:
 			return
+			
+		print(in_objects.header.stamp.to_nsec())
+		print(self.cvImageStamp.to_nsec())
+		
 		traffic_sign = TrafficSign()
 		traffic_sign.traffic_light_validity = True
 		traffic_sign.direction_validity = True
@@ -53,8 +59,9 @@ class ObjectConvert():
 		print('\n')
 
 	def reDetect(self,x,y,width,height):
-		LeftImg = self.cvImage[y:y+height, x:x+width//2]
-		RightImg = self.cvImage[y:y+height, x+width//2:x+width]
+		scope = width//3
+		LeftImg = self.cvImage[y:y+height, x+width//2-scope:x+width//2]
+		RightImg = self.cvImage[y:y+height, x+width//2:x+width//2+scope]
 		retl, LeftImg = cv2.threshold(LeftImg, 100, 255, cv2.THRESH_BINARY)
 		retr, RightImg = cv2.threshold(RightImg, 100, 255, cv2.THRESH_BINARY)
 		cv2.imshow('LeftImg', LeftImg)

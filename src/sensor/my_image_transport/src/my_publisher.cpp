@@ -27,7 +27,7 @@ public:
 	
 		ROS_INFO("%s",calibration_file_path.c_str());
 	
-		if(Loadintrinsics(calibration_file_path))
+		if(!Loadintrinsics(calibration_file_path))
 		{
 			pub_ = it.advertise("/image_raw", 1);
 			is_rectify_ = false;
@@ -38,7 +38,8 @@ public:
 			is_rectify_ = true;
 		}
 		camera_info_pub_ = nh.advertise<sensor_msgs::CameraInfo>("/camera_info", 1);
-		timer_ = nh.createTimer(ros::Duration(0.2), &ImageTalker::timerCallback, this);
+		if(is_rectify_)
+			timer_ = nh.createTimer(ros::Duration(0.2), &ImageTalker::timerCallback, this);
 	}
 	
 	void timerCallback(const ros::TimerEvent& event)
@@ -55,6 +56,10 @@ public:
 			ROS_ERROR("can not open video device\n");
 			return;
 		}
+		
+		//cap.set(CV_CAP_PROP_FPS, 20);
+		//cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
+		//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 960);
 		
 		cv::Mat frame,src;
 		sensor_msgs::ImagePtr msg;
