@@ -23,8 +23,12 @@ import  matplotlib.pyplot  as plt
 #camera params
 g_imageSize = [640,480]
 g_is_camera_info_ok = False
-g_pixel2dis_x = [None]*g_imageSize[0]
+
 g_pixel2dis_y = [None]*g_imageSize[1]
+g_pixel2dis_x = [g_pixel2dis_y[:]]*g_imageSize[0]
+
+g_pixel2dis = [None]*g_imageSize[0]*g_imageSize[1]*2
+g_pixel2dis = np.array(g_pixel2dis).reshape(g_imageSize[0], g_imageSize[1], 2)
 
 def generatePixel2disTable(h,l0,fx,fy,cx,cy):
 	global g_pixel2dis_y
@@ -42,7 +46,9 @@ def generatePixel2disTable(h,l0,fx,fy,cx,cy):
 		for u in range(g_imageSize[0]):
 			x = l* (u-cx)/fx
 			g_pixel2dis_x[u][v] = x
-			print(x,y)
+			g_pixel2dis[u,v] = (x,y)
+			#print(x,y)
+
 """
 def Pixel2dis(u,v):
 	#v dir
@@ -399,8 +405,6 @@ class LaneDetect():
 				#leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
-				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-
 		#cv2.imshow("ROI_rects",ROI*255)
 
 		# Concatenate the arrays of indices
@@ -413,27 +417,26 @@ class LaneDetect():
 		rightx = nonzerox[right_lane_inds]
 		righty = nonzeroy[right_lane_inds] +cut_height
 
-		# Fit a second order polynomial to each
-		
 		left_fit  = np.polyfit(lefty , leftx, 2)
 		right_fit = np.polyfit(righty, rightx, 2)
-
 		
+		if g_is_camera_info_ok:
+			trueFit_l = np.polyfit(g_pixel2dis_y(lefty) ,g_pixel2dis_x(leftx,lefty), 2)
+			trueFit_y = np.polyfit(g_pixel2dis_y(righty) ,g_pixel2dis_x(rightx,righty), 2)
+		"""
 		plt.figure(1)
 		plt.cla()
 		plt.plot(leftx,640-lefty,'.')
 		plt.plot(rightx,640-righty,'.')
 		
-		
 		y = np.array(range(binary_warped.shape[0]))[cut_height:]
 		x_l = np.polyval(left_fit,y)
 		x_r = np.polyval(right_fit,y)
 		
-		
 		plt.plot(x_l,640-y,'--',lw=3)
 		plt.plot(x_r,640-y,'--',lw=3)
 		plt.pause(0.01)
-		 
+		"""
 		#print(left_fit,right_fit)
 		return left_fit, right_fit 
 
