@@ -3,3 +3,10 @@ bool validity
 float32 lane_width
 float32 offset
 float32 theta
+
+uint8 dimension
+float32[] pixel_fit_left
+float32[] pixel_fit_right
+
+float32[] dis_fit_left
+float32[] dis_fit_right

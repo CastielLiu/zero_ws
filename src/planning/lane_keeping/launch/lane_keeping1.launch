@@ -3,19 +3,22 @@
 
 	<arg name="max_speed"  default="2.0"/>
 	
-	<node name="lane_detect_node" pkg="lane_detect" type="laneDetect_node.py" />
+	<node name="bend_detect" pkg="lane_detect" type="bend_detect.py" >
+		<param name="is_debug" value="true" />
+		<param name="is_reconfig" value="true" />
+	</node>
 	
-	<node name="lane_keeping_node" pkg="planning" type="lane_keeping_node">
+	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" output="screen">
 		<param name="cmd_topic_name" value="/cmd"/>
 		<param name="lane_keeping_speed" value="0.0"/>
 		<param name="foresight_distance" value="5.0"/>
 		
 	</node>
-	
-	 <node type="base_control_node" pkg ="base_control" name="base_control_node" >
-    	<param name ="stm32_port_name"   value="/dev/ttyUSB0"/>
-    </node>
-
+<!--
+	<node type="base_control_node" pkg ="base_control" name="base_control_node" >
+		<param name ="stm32_port_name"   value="/dev/ttyUSB0"/>
+	</node>
+-->
 
 </launch>
 

@@ -9,7 +9,6 @@
 
 #include<vector>
 
-
 class LaneKeeping
 {
 public:
@@ -18,7 +17,6 @@ public:
 	
 	bool init();
 	void laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg);
-
 	
 	
 private:
