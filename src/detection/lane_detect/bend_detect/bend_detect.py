@@ -27,8 +27,6 @@ g_is_camera_info_ok = False
 g_pixel2dis_y = np.array([None]*g_imageSize[1])
 g_pixel2dis_x = np.array([g_pixel2dis_y[:]]*g_imageSize[0])
 
-
-
 g_pixel2dis = [None]*g_imageSize[0]*g_imageSize[1]*2
 g_pixel2dis = np.array(g_pixel2dis).reshape(g_imageSize[0], g_imageSize[1], 2)
 
@@ -45,11 +43,19 @@ def generatePixel2disTable(h,l0,fx,fy,cx,cy):
 		y = h/math.tan(theta)
 		g_pixel2dis_y[v] = y
 		l = math.sqrt(y*y+ h*h)
+		
+		x_offset = l* (g_imageSize[0]/2-cx)/fx
 		for u in range(g_imageSize[0]):
-			x = l* (u-cx)/fx
-			g_pixel2dis_x[u][v] = x
+			x = l* (u-cx)/fx - x_offset
+			g_pixel2dis_x[u][v] = x 
 			g_pixel2dis[u,v] = (x,y)
 			#print(x,y)
+def dumpPixel2distable(file_name):
+	with open(file_name,'w') as f:
+		for y in range(len(g_pixel2dis[0])):
+			for x in range(len(g_pixel2dis)):
+				f.write('%d,%d\t%f,%f\n' %(x,y,g_pixel2dis[x,y,0],g_pixel2dis[x,y,1])) 
+	print("dumpPixel2distable in %s ok!" %file_name)
 
 """
 def Pixel2dis(u,v):
@@ -262,10 +268,10 @@ class LaneDetect():
 		
 		#thresholded[(hls_thresh_l == 255) & (hls_thresh_s == 255) | (x_thresh == 255) ]=255
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
-		thresholded[(mag_thresh == 255) & (luv_thresh == 255) ]=1
+		thresholded[(mag_thresh == 255) | (luv_thresh == 255) ]=1
 		
-		triangle = np.array([ [161,480], [270,420], [379,480] ])
-		cv2.fillConvexPoly(thresholded, triangle, 0)
+		rect = np.array([ [21,480], [170,150], [440,150], [590,480] ])
+		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
 		
@@ -298,7 +304,7 @@ class LaneDetect():
 		
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
-		left_fit, right_fit = self.find_line(thresholded, cut_height= np.int(thresholded.shape[0] *3/4))
+		left_fit, right_fit = self.find_line(thresholded, cut_height= np.int(thresholded.shape[0]/6))
 
 		lane_width,pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
 		
@@ -370,7 +376,7 @@ class LaneDetect():
 		# Set the width of the windows +/- margin
 		margin = 50
 		# Set minimum number of pixels found to recenter window
-		minpix = 20
+		minpix = 30
 		# Create empty lists to receive left and right lane pixel indices
 		left_lane_inds = []
 		right_lane_inds = []
@@ -384,9 +390,6 @@ class LaneDetect():
 			win_xleft_high = leftx_current + margin
 			win_xright_low = rightx_current - margin
 			win_xright_high = rightx_current + margin
-			
-			#cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
-			#cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
 			
 			# Identify the nonzero pixels in x and y within the window
 			good_left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
@@ -407,7 +410,11 @@ class LaneDetect():
 				#leftx_current = np.int(np.mean(nonzerox[good_left_inds]))
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
-		#cv2.imshow("ROI_rects",ROI*255)
+				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
+				
+			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
+			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
+		cv2.imshow("ROI_rects",ROI*255)
 
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
@@ -583,6 +590,7 @@ def cameraInfo_callback(in_message):
 	h = 0.575
 	l0 = 1.56
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
+	dumpPixel2distable('/home/wuconglei/a_wendao/zero_ws/pixel2dis.txt')
 
 def main(args):
 	rospy.init_node('lane_detect')
