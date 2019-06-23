@@ -270,7 +270,7 @@ class LaneDetect():
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
 		thresholded[(mag_thresh == 255) | (luv_thresh == 255) ]=1
 		
-		rect = np.array([ [21,480], [170,150], [440,150], [590,480] ])
+		rect = np.array([ [0,479], [0,340], [248,180], [392,180],[639,340], [639,479] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
@@ -304,7 +304,7 @@ class LaneDetect():
 		
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
-		left_fit, right_fit = self.find_line(thresholded, cut_height= np.int(thresholded.shape[0]/6))
+		left_fit, right_fit = self.find_line(thresholded, cut_height=0 ) #np.int(thresholded.shape[0]/6)
 
 		lane_width,pos_from_center,angle,validity = self.calculate_lane_state(left_fit, right_fit)
 		
@@ -374,7 +374,7 @@ class LaneDetect():
 		leftx_current = leftx_base
 		rightx_current = rightx_base
 		# Set the width of the windows +/- margin
-		margin = 50
+		margin = 30
 		# Set minimum number of pixels found to recenter window
 		minpix = 30
 		# Create empty lists to receive left and right lane pixel indices
@@ -438,11 +438,24 @@ class LaneDetect():
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
 			trueFit_y = np.polyfit(ry,rx, 2)
 			
+			plt.figure(0)
+			plt.cla()
+			
+			plt.plot(lx,ly,'.')
+			plt.plot(rx,ry,'.')
+			
+			y = np.linspace(0,8,80)
+			x_l = np.polyval(trueFit_l,y)
+			x_r = np.polyval(trueFit_y,y)
 			print(trueFit_l)
-			print(trueFit_y)
+			print(trueFit_l)
 			print("\n")
 			
-		
+			plt.plot(x_l,y,'--')
+			plt.plot(x_r,y,'--')
+			plt.grid('on')
+			plt.pause(0.01)
+			
 		plt.figure(1)
 		plt.cla()
 		plt.plot(leftx,640-lefty,'.')
@@ -456,6 +469,7 @@ class LaneDetect():
 		plt.plot(x_r,640-y,'--',lw=3)
 		plt.pause(0.01)
 		
+	
 		#print(left_fit,right_fit)
 		return left_fit, right_fit 
 
@@ -587,8 +601,8 @@ def cameraInfo_callback(in_message):
 	fy = in_message.P[5]
 	cx = in_message.P[2]
 	cy = in_message.P[6]
-	h = 0.575
-	l0 = 1.56
+	h = 0.6   #0.575
+	l0 = 1.50  #1.56
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('/home/wuconglei/a_wendao/zero_ws/pixel2dis.txt')
 
