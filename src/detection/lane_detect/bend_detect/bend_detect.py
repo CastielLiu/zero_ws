@@ -580,8 +580,8 @@ def cameraInfo_callback(in_message):
 	fy = in_message.P[5]
 	cx = in_message.P[2]
 	cy = in_message.P[6]
-	h = 0.5
-	l0 = 1.3
+	h = 0.575
+	l0 = 1.56
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 
 def main(args):
