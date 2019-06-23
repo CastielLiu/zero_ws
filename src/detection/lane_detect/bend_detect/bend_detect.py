@@ -24,8 +24,10 @@ import  matplotlib.pyplot  as plt
 g_imageSize = [640,480]
 g_is_camera_info_ok = False
 
-g_pixel2dis_y = [None]*g_imageSize[1]
-g_pixel2dis_x = [g_pixel2dis_y[:]]*g_imageSize[0]
+g_pixel2dis_y = np.array([None]*g_imageSize[1])
+g_pixel2dis_x = np.array([g_pixel2dis_y[:]]*g_imageSize[0])
+
+
 
 g_pixel2dis = [None]*g_imageSize[0]*g_imageSize[1]*2
 g_pixel2dis = np.array(g_pixel2dis).reshape(g_imageSize[0], g_imageSize[1], 2)
@@ -260,7 +262,7 @@ class LaneDetect():
 		
 		#thresholded[(hls_thresh_l == 255) & (hls_thresh_s == 255) | (x_thresh == 255) ]=255
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
-		thresholded[(mag_thresh == 255) | (luv_thresh == 255) ]=1
+		thresholded[(mag_thresh == 255) & (luv_thresh == 255) ]=1
 		
 		triangle = np.array([ [161,480], [270,420], [379,480] ])
 		cv2.fillConvexPoly(thresholded, triangle, 0)
@@ -292,9 +294,9 @@ class LaneDetect():
 		#thresholded = self.thresholding(wraped)
 		
 		thresholded = self.thresholding(frame)
-		thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
+		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		
-		#cv2.imshow("???",thresholded*255)
+		#cv2.imshow("afterPerspective",thresholded*255)
 		
 		left_fit, right_fit = self.find_line(thresholded, cut_height= np.int(thresholded.shape[0] *3/4))
 
@@ -421,9 +423,19 @@ class LaneDetect():
 		right_fit = np.polyfit(righty, rightx, 2)
 		
 		if g_is_camera_info_ok:
-			trueFit_l = np.polyfit(g_pixel2dis_y(lefty) ,g_pixel2dis_x(leftx,lefty), 2)
-			trueFit_y = np.polyfit(g_pixel2dis_y(righty) ,g_pixel2dis_x(rightx,righty), 2)
-		"""
+			ly = [g_pixel2dis_y[y] for y in lefty]
+			lx = [g_pixel2dis_x[leftx[i],lefty[i]] for i in range(len(leftx))]
+			trueFit_l = np.polyfit(ly,lx, 2)
+			
+			ry = [g_pixel2dis_y[y] for y in righty]
+			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
+			trueFit_y = np.polyfit(ry,rx, 2)
+			
+			print(trueFit_l)
+			print(trueFit_y)
+			print("\n")
+			
+		
 		plt.figure(1)
 		plt.cla()
 		plt.plot(leftx,640-lefty,'.')
@@ -436,7 +448,7 @@ class LaneDetect():
 		plt.plot(x_l,640-y,'--',lw=3)
 		plt.plot(x_r,640-y,'--',lw=3)
 		plt.pause(0.01)
-		"""
+		
 		#print(left_fit,right_fit)
 		return left_fit, right_fit 
 
@@ -569,7 +581,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.5
-	l0 = 1.1
+	l0 = 1.3
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 
 def main(args):
