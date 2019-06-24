@@ -57,9 +57,9 @@ public:
 			return;
 		}
 		
-		//cap.set(CV_CAP_PROP_FPS, 20);
-		//cap.set(CV_CAP_PROP_FRAME_WIDTH, 1280);
-		//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 960);
+		//cap.set(CV_CAP_PROP_FPS, 5);
+		//cap.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
+		//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
 		
 		cv::Mat frame,src;
 		sensor_msgs::ImagePtr msg;

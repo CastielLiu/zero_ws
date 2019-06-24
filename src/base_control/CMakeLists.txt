@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   serial
   sensor_msgs
+  driverless_utils
   driverless_msgs
 )
 
