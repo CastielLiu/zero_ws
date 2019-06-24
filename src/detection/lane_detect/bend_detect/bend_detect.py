@@ -584,7 +584,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 1.50  #1.56
+	l0 = 1.45  #1.56
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('/home/wuconglei/a_wendao/zero_ws/pixel2dis.txt')
 

@@ -8,18 +8,16 @@
 	
 	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" output="screen">
 		<param name="cmd_topic_name" value="/cmd"/>
-		<param name="lane_keeping_speed" value="1.0"/>
-		<param name="foresight_distance" value="3.0"/>
+		<param name="lane_keeping_speed" value="0.0"/>
+		<param name="foresight_distance" value="2.0"/>
 		
 	</node>
 	
 	<node name="show_detect_result" type="show_result.py" pkg="lane_detect"/>
 	
-<!--
 	<node type="base_control_node" pkg ="base_control" name="base_control_node" >
 		<param name ="stm32_port_name"   value="/dev/ttyUSB0"/>
 	</node>
--->
 
 </launch>
 
