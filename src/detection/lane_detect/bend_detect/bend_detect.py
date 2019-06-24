@@ -424,7 +424,7 @@ class LaneDetect():
 			ry = [g_pixel2dis_y[y] for y in righty]
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
 			dis_fit_r = np.polyfit(ry,rx, 2)
-
+		"""
 			#plot lane in true distance
 			plt.figure(0)
 			plt.cla()
@@ -450,6 +450,7 @@ class LaneDetect():
 		plt.plot(x_l,480-y,'--',lw=3)
 		plt.plot(x_r,480-y,'--',lw=3)
 		plt.pause(0.01)
+		"""
 		
 		return pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r
 
