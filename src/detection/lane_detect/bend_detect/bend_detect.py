@@ -155,7 +155,7 @@ class LaneDetect():
 		self.__s_thresh = (164,255)
 		
 		self.__dir_thresh = (0,255)
-		self.__luv_l_thresh = (0,255)
+		self.__luv_l_thresh = (180,200)
 		self.__mag_thresh = (0,255)
 		
 		self.__debug = False
@@ -424,36 +424,31 @@ class LaneDetect():
 			ry = [g_pixel2dis_y[y] for y in righty]
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
 			dis_fit_r = np.polyfit(ry,rx, 2)
-			
+
+			#plot lane in true distance
 			plt.figure(0)
 			plt.cla()
-			
 			plt.plot(lx,ly,'.')
 			plt.plot(rx,ry,'.')
-			
 			y = np.linspace(0,8,80)
 			x_l = np.polyval(dis_fit_l,y)
 			x_r = np.polyval(dis_fit_r,y)
-			print(dis_fit_l)
-			print(dis_fit_r)
-			print("\n")
 			
 			plt.plot(x_l,y,'--')
 			plt.plot(x_r,y,'--')
 			plt.grid('on')
 			plt.pause(0.01)
-			
+		
+		#plot lane in pixels
 		plt.figure(1)
 		plt.cla()
-		plt.plot(leftx,640-lefty,'.')
-		plt.plot(rightx,640-righty,'.')
-		
+		plt.plot(leftx,480-lefty,'.')
+		plt.plot(rightx,480-righty,'.')
 		y = np.array(range(binary_warped.shape[0]))[cut_height:]
 		x_l = np.polyval(pixel_fit_l,y)
 		x_r = np.polyval(pixel_fit_r,y)
-		
-		plt.plot(x_l,640-y,'--',lw=3)
-		plt.plot(x_r,640-y,'--',lw=3)
+		plt.plot(x_l,480-y,'--',lw=3)
+		plt.plot(x_r,480-y,'--',lw=3)
 		plt.pause(0.01)
 		
 		return pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r

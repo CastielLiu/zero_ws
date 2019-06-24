@@ -30,11 +30,4 @@ float g_steering_gearRatio = MAX_STEERING_ANGLE/MAX_ROAD_WHEEL_ANGLE;
 
 
 
-
-
-
-
-
-
-
 #endif

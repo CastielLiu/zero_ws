@@ -12,7 +12,6 @@ from driverless_msgs.msg import Lane
 
 from driverless_msgs.msg import DrawArea
 
-
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
@@ -26,7 +25,6 @@ class ShowResult:
 		self.bridge = CvBridge()
 		self.sub_image = rospy.Subscriber("/image_rectified",Image,self.image_callback)
 		self.sub_lane = rospy.Subscriber("/lane",Lane,self.lane_callback)
-		self.sub_draw_area = rospy.Subscriber("/draw_area",DrawArea,self.draw_area_callback)
 		self.lane_msg = Lane()
 		self.image = Image()
 		
@@ -69,12 +67,25 @@ class ShowResult:
 	
 	def lane_callback(self,lane):
 		self.lane_msg = lane
-	
-	def draw_area_callback(self,msg):
-		self.draw_values(self.image,self.lane_msg.offset,self.lane_msg.theta)
-		cv2.imshow("result",self.draw_area(self.image,msg))
-		cv2.waitKey(1)
+		pixel_fit_left = lane.pixel_fit_left
+		pixel_fit_right = lane.pixel_fit_right
 		
+		pureImage = np.zeros_like(self.image)
+		#left
+		y1 = 300#self.image.shape[0]
+		y2 = 100
+		left_x1 = int(np.polyval(lane.pixel_fit_left, y1))
+		left_x2 = int(np.polyval(lane.pixel_fit_left, y2))
+		cv2.line(pureImage,(left_x1,y1), (left_x2,y2), (0,255,0),10)
+		#right
+		right_x1 = int(np.polyval(lane.pixel_fit_right, y1))
+		right_x2 = int(np.polyval(lane.pixel_fit_right, y2))
+		cv2.line(pureImage,(right_x1,y1), (right_x2,y2), (0,255,0),10)
+		
+		result = cv2.addWeighted(self.image, 1, pureImage, 0.5, 0)
+		cv2.imshow("result",result)
+		cv2.waitKey(1)
+	
 	def image_callback(self,rosImage):
 		try:
 			self.image = self.bridge.imgmsg_to_cv2(rosImage, "bgr8")
