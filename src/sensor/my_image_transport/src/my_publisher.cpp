@@ -22,7 +22,7 @@ public:
 	
 		std::string calibration_file_path;
 		nh_private.param<std::string>("calibration_file_path",calibration_file_path,"a.yaml");
-	
+		nh_private.param<bool>("is_show_image",is_show_image_,false);
 		nh_private.param<int>("frame_rate",frame_rate_,30);
 	
 		ROS_INFO("%s",calibration_file_path.c_str());
@@ -76,12 +76,17 @@ public:
 				{
 					cv::undistort(frame, src, camera_instrinsics_, distortion_coefficients_);
 					msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", src).toImageMsg();
+					if(is_show_image_) {cv::namedWindow("image_rectified",cv::WINDOW_NORMAL); cv::imshow("image_rectified",frame); cv::waitKey(1);}
 				}
 				else
+				{
 					msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
+					if(is_show_image_) {cv::namedWindow("image_raw",cv::WINDOW_NORMAL); cv::imshow("image_raw",frame); cv::waitKey(1);}
+				}
 				msg->header.frame_id="camera";
 				pub_.publish(msg);
 			}
+			
 			loop_rate.sleep();
 			ros::spinOnce();
 		}
@@ -166,6 +171,7 @@ private:
 	cv::Size imgSize_;
 	int camera_id_;
 	int frame_rate_;
+	bool is_show_image_;
 	
 };
 

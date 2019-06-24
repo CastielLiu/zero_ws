@@ -1,11 +1,14 @@
 <!-- -->
 
 <launch>
- <arg name="camera_num" default="0"/>
+<arg name="camera_num" default="0"/>
+<arg name="show" default="true" /> 
 
-	<node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen" args="$(arg camera_num)">
+	<node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen" args="$(arg camera_num)" >
 		<param name ="calibration_file_path" value="$(find my_image_transport)/calibration_file/1.yaml"/>
-
+		<param name ="frame_rate" value="30"/>
+		<param name="is_show_image" value="$(arg show)"/>
 	</node>
 
 </launch>
+
