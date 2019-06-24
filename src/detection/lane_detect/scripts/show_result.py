@@ -23,8 +23,8 @@ from param_config.cfg import lane_detectConfig
 class ShowResult:
 	def __init__(self):
 		self.bridge = CvBridge()
-		self.sub_image = rospy.Subscriber("/image_rectified",Image,self.image_callback)
-		self.sub_lane = rospy.Subscriber("/lane",Lane,self.lane_callback)
+		self.sub_image = rospy.Subscriber("/image_rectified",Image,self.image_callback, queue_size=1)
+		self.sub_lane = rospy.Subscriber("/lane",Lane,self.lane_callback,  queue_size=1)
 		self.lane_msg = Lane()
 		self.image = Image()
 		
@@ -72,17 +72,18 @@ class ShowResult:
 		
 		pureImage = np.zeros_like(self.image)
 		#left
-		y1 = 300#self.image.shape[0]
-		y2 = 100
-		left_x1 = int(np.polyval(lane.pixel_fit_left, y1))
-		left_x2 = int(np.polyval(lane.pixel_fit_left, y2))
-		cv2.line(pureImage,(left_x1,y1), (left_x2,y2), (0,255,0),10)
-		#right
-		right_x1 = int(np.polyval(lane.pixel_fit_right, y1))
-		right_x2 = int(np.polyval(lane.pixel_fit_right, y2))
-		cv2.line(pureImage,(right_x1,y1), (right_x2,y2), (0,255,0),10)
+		y1 = lane.lanePixelRange[0] 
+		y2 = lane.lanePixelRange[1] 
 		
-		result = cv2.addWeighted(self.image, 1, pureImage, 0.5, 0)
+		y = np.linspace(y1,y2,100)
+		
+		left_x = np.polyval(lane.pixel_fit_left, y)
+		right_x = np.polyval(lane.pixel_fit_right, y)
+		for i in range(len(y)):
+			cv2.circle(pureImage,(int(left_x[i]), int(y[i])),5,(0,255,0), -1)
+			cv2.circle(pureImage,(int(right_x[i]), int(y[i])),5,(0,255,0), -1)
+		cv2.imshow("pureImage",pureImage)
+		result = cv2.addWeighted(self.image, 1, pureImage, 0.8, 0)
 		cv2.imshow("result",result)
 		cv2.waitKey(1)
 	

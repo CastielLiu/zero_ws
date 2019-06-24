@@ -2,8 +2,8 @@
 <launch>
 
 	<node name="bend_detect" pkg="lane_detect" type="bend_detect.py" >
-		<param name="is_debug" value="false" />
-		<param name="is_reconfig" value="true" />
+		<param name="is_debug" value="true" />
+		<param name="is_reconfig" value="false" />
 	</node>
 	
 	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" output="screen">

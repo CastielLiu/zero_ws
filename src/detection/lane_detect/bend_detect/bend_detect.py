@@ -155,8 +155,8 @@ class LaneDetect():
 		self.__s_thresh = (164,255)
 		
 		self.__dir_thresh = (0,255)
-		self.__luv_l_thresh = (180,200)
-		self.__mag_thresh = (0,255)
+		self.__luv_l_thresh = (159,255)
+		self.__mag_thresh = (174,255)
 		
 		self.__debug = False
 		self.area = DrawArea()
@@ -300,8 +300,9 @@ class LaneDetect():
 		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
+		lanePixelRange = [0,230]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
-		pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r = self.find_line(thresholded, cut_height=0 ) #np.int(thresholded.shape[0]/6)
+		pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r = self.find_line(thresholded, lanePixelRange) 
 		
 		lane_msg = Lane()
 		
@@ -311,6 +312,7 @@ class LaneDetect():
 		lane_msg.pixel_fit_right = pixel_fit_r
 		lane_msg.dis_fit_left = dis_fit_l
 		lane_msg.dis_fit_right = dis_fit_r
+		lane_msg.lanePixelRange = lanePixelRange
 		
 		return lane_msg
 		
@@ -324,11 +326,11 @@ class LaneDetect():
 			index += 1
 	
 		
-	def find_line(self,binary_warped, cut_height):
+	def find_line(self,binary_warped, lanePixelRange):
 		# Take a histogram of the bottom half of the image
 		#histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
 		
-		ROI = binary_warped[cut_height:, :]
+		ROI = binary_warped[lanePixelRange[0]:lanePixelRange[1], :]
 		
 		wight = np.array(range(ROI.shape[0])).reshape(ROI.shape[0],1)
 		
@@ -398,20 +400,21 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-				
+		"""
 			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
 			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
-		#cv2.imshow("ROI_rects",ROI*255)
-
+		cv2.imshow("ROI_rects",ROI*255)
+		"""
+		
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
 		right_lane_inds = np.concatenate(right_lane_inds)
 		
 		# Extract left and right line pixel positions
 		leftx = nonzerox[left_lane_inds]
-		lefty = nonzeroy[left_lane_inds] + cut_height
+		lefty = nonzeroy[left_lane_inds] + lanePixelRange[0]
 		rightx = nonzerox[right_lane_inds]
-		righty = nonzeroy[right_lane_inds] +cut_height
+		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 
 		pixel_fit_l  = np.polyfit(lefty , leftx, 2)
 		pixel_fit_r = np.polyfit(righty, rightx, 2)
@@ -444,7 +447,7 @@ class LaneDetect():
 		plt.cla()
 		plt.plot(leftx,480-lefty,'.')
 		plt.plot(rightx,480-righty,'.')
-		y = np.array(range(binary_warped.shape[0]))[cut_height:]
+		y = np.array(range(binary_warped.shape[0]))[lanePixelRange[0]:]
 		x_l = np.polyval(pixel_fit_l,y)
 		x_r = np.polyval(pixel_fit_r,y)
 		plt.plot(x_l,480-y,'--',lw=3)
@@ -551,7 +554,7 @@ class image_converter:
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=0)
 		self.pub_draw_area = rospy.Publisher("/draw_area",DrawArea,queue_size=0)
 		self.bridge = CvBridge()
-		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback)
+		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback, queue_size=1)
 		
 		if is_reconfig:
 			self.srv = Server(lane_detectConfig, self.config_callback)
@@ -584,9 +587,9 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 1.45  #1.56
+	l0 = 1.35   #1.45
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
-	dumpPixel2distable('/home/wuconglei/a_wendao/zero_ws/pixel2dis.txt')
+	dumpPixel2distable('/home/nvidia/projects/zero_ws/pixel2dis.txt')
 
 def main(args):
 	rospy.init_node('lane_detect')
