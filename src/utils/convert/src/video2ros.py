@@ -44,7 +44,7 @@ class Video2ROS():
 				key = cv2.waitKey(0)
 			else:
 				key = cv2.waitKey(int(1000.0/self.frameRate))
-			print(self.is_waitKey , key)
+			#print(self.is_waitKey , key)
 			if(113 == key):
 				rospy.signal_shutdown("quit")
 			
@@ -57,7 +57,7 @@ class Video2ROS():
 			
 		
 def main(argv):
-	if(len(argv)>1):
+	if(len(argv)==4):
 		video2ros = Video2ROS(argv)
 		while not rospy.is_shutdown():
 			cap = cv2.VideoCapture(video2ros.videoPath )
@@ -70,7 +70,7 @@ def main(argv):
 			cap.release()
 			
 	else:
-		print('please input the video path')
+		print('please input the (videoPath,frameRate,is_waitKey)')
 
 if __name__ == '__main__':
 	try:

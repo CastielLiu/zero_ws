@@ -285,7 +285,7 @@ class LaneDetect():
 			cv2.imshow('mag_thresh',mag_thresh)
 			cv2.imshow('luv_thresh',luv_thresh)
 			
-			cv2.imshow("thresholded",thresholded*255)
+			cv2.imshow("Binary graph",thresholded*255)
 			cv2.waitKey(1)
 		
 		return thresholded
@@ -336,7 +336,7 @@ class LaneDetect():
 		histogram = np.sum(ROI*wight, axis=0)
 		
 		
-		plt.figure(3)
+		plt.figure("Histogram")
 		plt.cla()
 		plt.plot(range(len(histogram)),histogram)
 		plt.pause(0.01)
@@ -362,7 +362,7 @@ class LaneDetect():
 		leftx_current = leftx_base
 		rightx_current = rightx_base
 		# Set the width of the windows +/- margin
-		margin = 30
+		margin = 60
 		# Set minimum number of pixels found to recenter window
 		minpix = 30
 		# Create empty lists to receive left and right lane pixel indices
@@ -428,7 +428,7 @@ class LaneDetect():
 			dis_fit_r = np.polyfit(ry,rx, 2)
 		
 			#plot lane in true distance
-			plt.figure(0)
+			plt.figure("True distance fit")
 			plt.cla()
 			plt.plot(lx,ly,'.')
 			plt.plot(rx,ry,'.')
@@ -448,7 +448,7 @@ class LaneDetect():
 			plt.pause(0.01)
 		
 		#plot lane in pixels
-		plt.figure(1)
+		plt.figure("Pixel fit")
 		plt.cla()
 		plt.plot(leftx,480-lefty,'.')
 		plt.plot(rightx,480-righty,'.')
@@ -594,7 +594,7 @@ def cameraInfo_callback(in_message):
 	h = 0.6   #0.575
 	l0 = 1.35   #1.45
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
-	dumpPixel2distable('/home/nvidia/projects/zero_ws/pixel2dis.txt')
+	dumpPixel2distable('pixel2dis.txt')
 
 def main(args):
 	rospy.init_node('lane_detect')
