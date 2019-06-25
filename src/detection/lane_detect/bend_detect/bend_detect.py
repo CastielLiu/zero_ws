@@ -278,7 +278,6 @@ class LaneDetect():
 		cv2.line(thresholded,(self.__image_width,self.__draw_y),(self.__image_width - self.__offset,self.__image_height),(0,0,0),20)
 		
 		if self.__debug:
-			cv2.imshow("top2down",img)
 			#cv2.imshow('x_thresh',x_thresh)
 			cv2.imshow('hls_thresh_l',hls_thresh_l)
 			
@@ -336,12 +335,12 @@ class LaneDetect():
 		
 		histogram = np.sum(ROI*wight, axis=0)
 		
-		"""
+		
 		plt.figure(3)
 		plt.cla()
 		plt.plot(range(len(histogram)),histogram)
 		plt.pause(0.01)
-		"""
+		
 		
 		# Find the peak of the left and right halves of the histogram
 		# These will be the starting point for the left and right lines
@@ -400,11 +399,11 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-		"""
+		
 			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
 			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
 		cv2.imshow("ROI_rects",ROI*255)
-		"""
+		
 		
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
@@ -427,13 +426,19 @@ class LaneDetect():
 			ry = [g_pixel2dis_y[y] for y in righty]
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
 			dis_fit_r = np.polyfit(ry,rx, 2)
-		"""
+		
 			#plot lane in true distance
 			plt.figure(0)
 			plt.cla()
 			plt.plot(lx,ly,'.')
 			plt.plot(rx,ry,'.')
-			y = np.linspace(0,8,80)
+			
+			near_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[1],1]
+			far_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[0],1]
+			
+			print(near_dis,far_dis)
+			
+			y = np.linspace(near_dis,far_dis,50)
 			x_l = np.polyval(dis_fit_l,y)
 			x_r = np.polyval(dis_fit_r,y)
 			
@@ -447,13 +452,13 @@ class LaneDetect():
 		plt.cla()
 		plt.plot(leftx,480-lefty,'.')
 		plt.plot(rightx,480-righty,'.')
-		y = np.array(range(binary_warped.shape[0]))[lanePixelRange[0]:]
+		y = np.array(range(binary_warped.shape[0]))[lanePixelRange[0]:lanePixelRange[1]]
 		x_l = np.polyval(pixel_fit_l,y)
 		x_r = np.polyval(pixel_fit_r,y)
 		plt.plot(x_l,480-y,'--',lw=3)
 		plt.plot(x_r,480-y,'--',lw=3)
 		plt.pause(0.01)
-		"""
+		
 		
 		return pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r
 

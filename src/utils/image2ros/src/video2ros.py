@@ -3,6 +3,7 @@
 import rospy
 import roslib
 import sys
+import thread
 
 from std_msgs.msg import String
 from sensor_msgs.msg import Image
@@ -20,50 +21,61 @@ class Video2ROS():
 		self.videoPath = argv[1]
 		self.frameRate = int(argv[2])
 		self.is_waitKey = int(argv[3])
+		self.image_msg = None
+		self.cv_image = None
 		print('video path: %s' %self.videoPath)
 		print('frameRate: %d' %self.frameRate)
 		print('is waitKey: %d' %self.is_waitKey)
-		
-	def run(self):
-		while True:
-			cap = cv2.VideoCapture(self.videoPath )
-			if cap is not None:
-				print('open %s ok.' %self.videoPath )
+		try:
+			thread.start_new_thread(self.publishVideo, ("publishVideoThread",) )
+		except:
+			print "Error: unable to start thread"
+			
+	def readVideo(self,capture):
+		while(capture.isOpened() and not rospy.is_shutdown()):
+			ret,self.cv_image = capture.read()
+			if not ret:
+				break
+			self.image_msg = self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8")
+			self.image_msg.header.stamp = rospy.Time().now()
+			cv2.imshow("image",self.cv_image)
+			
+			if self.is_waitKey:
+				key = cv2.waitKey(0)
 			else:
-				print('open %s failed!' %self.videoPath )
-				return
-				
-			while(cap.isOpened()):
-				ret,cv_image = cap.read()
-				if not ret:
-					break
-				image_msg = self.bridge.cv2_to_imgmsg(cv_image, "bgr8")
-				image_msg.header.stamp = rospy.Time().now()
-				self.pub.publish(image_msg)
-				if rospy.is_shutdown():
-					return
-				cv2.imshow("image",cv_image)
-				
-				if self.is_waitKey:
-					key = cv2.waitKey(0)
-				else:
-					key = cv2.waitKey(int(1000.0/self.frameRate))
-				if(113 == key):
-					cap.release()
-					return
-				
-			cap.release()
+				key = cv2.waitKey(int(1000.0/self.frameRate))
+			print(self.is_waitKey , key)
+			if(113 == key):
+				rospy.signal_shutdown("quit")
+			
+	def publishVideo(self,threadName):
+		while not rospy.is_shutdown():
+			if self.image_msg is not None:
+				self.pub.publish(self.image_msg)
+			time.sleep(0.05)
+			
 			
 		
 def main(argv):
 	if(len(argv)>1):
 		video2ros = Video2ROS(argv)
-		video2ros.run()
+		while not rospy.is_shutdown():
+			cap = cv2.VideoCapture(video2ros.videoPath )
+			if cap is not None:
+				print('open %s ok.' %video2ros.videoPath )
+			else:
+				print('open %s failed!' %video2ros.videoPath )
+				return
+			video2ros.readVideo(cap)
+			cap.release()
+			
 	else:
 		print('please input the video path')
 
 if __name__ == '__main__':
-	main(sys.argv)
-	
+	try:
+		main(sys.argv)
+	except KeyboardInterrupt:
+		print("node over...")
 
 
