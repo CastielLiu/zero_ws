@@ -7,11 +7,13 @@
 #include "sensor_msgs/CameraInfo.h"
 
 #define _NODE_NAME_ "image_publisher"
+using namespace cv;
 
 class ImageTalker
 {
 public:
-	ImageTalker()
+	ImageTalker():
+		is_draw_center_(false)
 	{
 	}
 	void init(ros::NodeHandle& nh, ros::NodeHandle& nh_private,int cameraId)
@@ -23,6 +25,7 @@ public:
 		std::string calibration_file_path;
 		nh_private.param<std::string>("calibration_file_path",calibration_file_path,"a.yaml");
 		nh_private.param<bool>("is_show_image",is_show_image_,false);
+		nh_private.param<bool>("is_draw_center",is_draw_center_,false);
 		nh_private.param<int>("frame_rate",frame_rate_,30);
 	
 		ROS_INFO("%s",calibration_file_path.c_str());
@@ -58,8 +61,8 @@ public:
 		}
 		
 		//cap.set(CV_CAP_PROP_FPS, 5);
-		//cap.set(CV_CAP_PROP_FRAME_WIDTH, 1024);
-		//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 768);
+		//cap.set(CV_CAP_PROP_FRAME_WIDTH, 3840);
+		//cap.set(CV_CAP_PROP_FRAME_HEIGHT, 1080);
 		
 		cv::Mat frame,src;
 		sensor_msgs::ImagePtr msg;
@@ -76,12 +79,28 @@ public:
 				{
 					cv::undistort(frame, src, camera_instrinsics_, distortion_coefficients_);
 					msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", src).toImageMsg();
-					if(is_show_image_) {cv::namedWindow("image_rectified",cv::WINDOW_NORMAL); cv::imshow("image_rectified",frame); cv::waitKey(1);}
+					if(is_show_image_) 
+					{
+						if(is_draw_center_)
+						{
+							int cx = camera_info_msg_.K[2];
+							int cy = camera_info_msg_.K[5];
+							cv::line(frame,Point(frame.cols/2-10,cy),Point(frame.cols/2+10,cy),Scalar(255,0,0),1,8);
+							cv::line(frame,Point(frame.cols/2,cy-10),Point(frame.cols/2,cy+10),Scalar(255,0,0),1,8);
+							cv::circle(frame, Point(frame.cols/2,cy), 15, cv::Scalar(0,0,255), 1);
+						}
+						cv::namedWindow("image_rectified",cv::WINDOW_NORMAL); 
+						cv::imshow("image_rectified",frame); cv::waitKey(1);
+					}
 				}
 				else
 				{
 					msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", frame).toImageMsg();
-					if(is_show_image_) {cv::namedWindow("image_raw",cv::WINDOW_NORMAL); cv::imshow("image_raw",frame); cv::waitKey(1);}
+					if(is_show_image_) 
+					{
+						cv::namedWindow("image_raw",cv::WINDOW_NORMAL); 
+						cv::imshow("image_raw",frame); cv::waitKey(1);
+					}
 				}
 				msg->header.frame_id="camera";
 				pub_.publish(msg);
@@ -172,7 +191,7 @@ private:
 	int camera_id_;
 	int frame_rate_;
 	bool is_show_image_;
-	
+	bool is_draw_center_;
 };
 
 

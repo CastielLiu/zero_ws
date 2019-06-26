@@ -8,6 +8,7 @@
 		<param name ="calibration_file_path" value="$(find my_image_transport)/calibration_file/1.yaml"/>
 		<param name ="frame_rate" value="30"/>
 		<param name="is_show_image" value="$(arg show)"/>
+		<param name="is_draw_center" value="true"/>
 	</node>
 
 </launch>
