@@ -3,12 +3,14 @@
 <launch>
 <arg name="id" default="1"/>
 <arg name="show" default="true" />
-<arg name="yaml" default="1"/>
+<arg name="file" default="1.yaml"/>
 
 	<node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen" args="$(arg id)" >
-		<param name ="calibration_file_path" value="$(find my_image_transport)/calibration_file/$(arg yaml).yaml"/>
+		<param name ="calibration_file_path" value="$(find my_image_transport)/calibration_file/$(arg file)"/>
 		<param name ="frame_rate" value="30"/>
 		<param name="is_show_image" value="$(arg show)"/>
+		<param name="is_draw_center" value="true"/>
+		
 	</node>
 
 </launch>
