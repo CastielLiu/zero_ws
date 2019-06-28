@@ -299,7 +299,7 @@ class LaneDetect():
 		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
-		lanePixelRange = [0,230]  #np.int(thresholded.shape[0]/6),480
+		lanePixelRange = [130,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r = self.find_line(thresholded, lanePixelRange) 
 		
@@ -335,12 +335,12 @@ class LaneDetect():
 		
 		histogram = np.sum(ROI*wight, axis=0)
 		
-		
+		"""
 		plt.figure("Histogram")
 		plt.cla()
 		plt.plot(range(len(histogram)),histogram)
 		plt.pause(0.01)
-		
+		"""
 		
 		# Find the peak of the left and right halves of the histogram
 		# These will be the starting point for the left and right lines
@@ -362,7 +362,7 @@ class LaneDetect():
 		leftx_current = leftx_base
 		rightx_current = rightx_base
 		# Set the width of the windows +/- margin
-		margin = 60
+		margin = 40
 		# Set minimum number of pixels found to recenter window
 		minpix = 30
 		# Create empty lists to receive left and right lane pixel indices
@@ -399,11 +399,11 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-		
+		"""
 			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
 			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
 		cv2.imshow("ROI_rects",ROI*255)
-		
+		"""
 		
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
@@ -427,6 +427,7 @@ class LaneDetect():
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
 			dis_fit_r = np.polyfit(ry,rx, 2)
 		
+		"""
 			#plot lane in true distance
 			plt.figure("True distance fit")
 			plt.cla()
@@ -458,7 +459,7 @@ class LaneDetect():
 		plt.plot(x_l,480-y,'--',lw=3)
 		plt.plot(x_r,480-y,'--',lw=3)
 		plt.pause(0.01)
-		
+		"""
 		
 		return pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r
 
@@ -592,7 +593,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 1.35   #1.45
+	l0 = 2.39   #1.457
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('pixel2dis.txt')
 
