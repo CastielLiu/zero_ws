@@ -72,7 +72,10 @@ bool BaseControl::init(int argc,char**argv)
 	sub_cmd_ = nh.subscribe("/cmd",1,&BaseControl::cmd_callback,this);
 	
 	if(!openSerial(stm32_serial_port_,stm32_port_name_,stm32_baudrate_))
+	{
+		ROS_ERROR("open %s failed",stm32_port_name_.c_str());
 		return false;
+	}
 	
 	ROS_INFO("System initialization completed");
 	
@@ -81,8 +84,8 @@ bool BaseControl::init(int argc,char**argv)
 
 void BaseControl::run()
 {
-	readFromStm32_thread_ptr_ = boost::shared_ptr<boost::thread > 
-		(new boost::thread(boost::bind(&BaseControl::read_stm32_port, this)));
+	//readFromStm32_thread_ptr_ = boost::shared_ptr<boost::thread > 
+	//	(new boost::thread(boost::bind(&BaseControl::read_stm32_port, this)));
 		
 	ros::spin();
 }
@@ -100,7 +103,7 @@ void BaseControl::read_stm32_port()
 		try 
 		{
 			len = stm32_serial_port_->read(stm32_data_buf, STM32_MAX_LOAD_SIZE);
-			//ROS_INFO("read_stm32_port get %d bytes",len);
+			ROS_INFO("read_stm32_port get %d bytes",len);
 		}
 		catch (std::exception &e) 
 		{
@@ -109,12 +112,12 @@ void BaseControl::read_stm32_port()
 			std::cout << output.str() <<std::endl;
 		}
 		if(len == 0) continue;
-
-		/*for(int i=0;i<len;i++)
+/*
+		for(int i=0;i<len;i++)
 			printf("%x\t",stm32_data_buf[i]);
-		std::cout << len << std::endl;*/
-		
-		Stm32BufferIncomingData(stm32_data_buf, len);
+		std::cout << len << std::endl;
+*/		
+		//Stm32BufferIncomingData(stm32_data_buf, len);
 	}
 }
 
