@@ -5,6 +5,10 @@ float32 offset
 float32 theta
 
 uint8 dimension
+
+bool left_lane_validity
+bool right_lane_validity
+
 float32[] pixel_fit_left
 float32[] pixel_fit_right
 

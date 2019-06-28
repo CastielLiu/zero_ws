@@ -27,6 +27,10 @@ class ShowResult:
 		self.sub_lane = rospy.Subscriber("/lane",Lane,self.lane_callback,  queue_size=1)
 		self.lane_msg = Lane()
 		self.image = Image()
+		self.is_save_video = False
+		if(self.is_save_video):
+			self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+			self.videoOut = cv2.VideoWriter("result.avi",self.fourcc, 20.0, (640,480))
 		
 	def draw_area(self,img,area):
 		Minv = np.array(area.Minv)
@@ -75,15 +79,20 @@ class ShowResult:
 		y1 = lane.lanePixelRange[0] 
 		y2 = lane.lanePixelRange[1] 
 		
-		y = np.linspace(y1,y2,100)
+		y = np.linspace(y1,y2,30)
 		
 		left_x = np.polyval(lane.pixel_fit_left, y)
 		right_x = np.polyval(lane.pixel_fit_right, y)
 		for i in range(len(y)):
-			cv2.circle(pureImage,(int(left_x[i]), int(y[i])),5,(0,255,0), -1)
-			cv2.circle(pureImage,(int(right_x[i]), int(y[i])),5,(0,255,0), -1)
-		cv2.imshow("pureImage",pureImage)
+			if(lane.left_lane_validity):
+				cv2.circle(pureImage,(int(left_x[i]), int(y[i])),5,(0,255,0), -1)
+			if(lane.right_lane_validity):
+				cv2.circle(pureImage,(int(right_x[i]), int(y[i])),5,(0,255,0), -1)
+		#cv2.imshow("pureImage",pureImage)
 		result = cv2.addWeighted(self.image, 1, pureImage, 0.8, 0)
+		if(self.is_save_video):
+			self.videoOut.write(result)
+		
 		cv2.imshow("result",result)
 		cv2.waitKey(1)
 	

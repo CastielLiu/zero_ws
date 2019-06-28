@@ -161,6 +161,7 @@ class LaneDetect():
 		self.__debug = False
 		self.area = DrawArea()
 		self.area.Minv =  list(np.reshape(self.__Minv,(1,9))[0])
+		self.lane_msg = Lane()
 	
 	def setThreshold(self,config):
 		self.__sobel_thresh_x = (config.x_sobel_thresh_min,config.x_sobel_thresh_max)
@@ -269,13 +270,13 @@ class LaneDetect():
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
 		thresholded[(mag_thresh == 255) | (luv_thresh == 255) ]=1
 		
-		rect = np.array([ [0,479], [0,340], [248,180], [392,180],[639,340], [639,479] ])
+		rect = np.array([ [80,479], [220,245], [410,245], [514,479] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
 		
-		cv2.line(thresholded,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),20)
-		cv2.line(thresholded,(self.__image_width,self.__draw_y),(self.__image_width - self.__offset,self.__image_height),(0,0,0),20)
+		#cv2.line(thresholded,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),20)
+		#cv2.line(thresholded,(self.__image_width,self.__draw_y),(self.__image_width - self.__offset,self.__image_height),(0,0,0),20)
 		
 		if self.__debug:
 			#cv2.imshow('x_thresh',x_thresh)
@@ -301,19 +302,8 @@ class LaneDetect():
 		
 		lanePixelRange = [130,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
-		pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r = self.find_line(thresholded, lanePixelRange) 
+		self.find_line(thresholded, lanePixelRange) 
 		
-		lane_msg = Lane()
-		
-		lane_msg.validity = True
-		lane_msg.dimension = len(pixel_fit_l)
-		lane_msg.pixel_fit_left = pixel_fit_l
-		lane_msg.pixel_fit_right = pixel_fit_r
-		lane_msg.dis_fit_left = dis_fit_l
-		lane_msg.dis_fit_right = dis_fit_r
-		lane_msg.lanePixelRange = lanePixelRange
-		
-		return lane_msg
 		
 	def vetexPerspective(self,vertex):
 		index = 0
@@ -326,6 +316,7 @@ class LaneDetect():
 	
 		
 	def find_line(self,binary_warped, lanePixelRange):
+		
 		# Take a histogram of the bottom half of the image
 		#histogram = np.sum(binary_warped[binary_warped.shape[0] // 2:, :], axis=0) 
 		
@@ -335,12 +326,12 @@ class LaneDetect():
 		
 		histogram = np.sum(ROI*wight, axis=0)
 		
-		"""
+		
 		plt.figure("Histogram")
 		plt.cla()
 		plt.plot(range(len(histogram)),histogram)
 		plt.pause(0.01)
-		"""
+		
 		
 		# Find the peak of the left and right halves of the histogram
 		# These will be the starting point for the left and right lines
@@ -399,11 +390,11 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-		"""
+		#"""
 			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
 			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
 		cv2.imshow("ROI_rects",ROI*255)
-		"""
+		#"""
 		
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
@@ -414,6 +405,16 @@ class LaneDetect():
 		lefty = nonzeroy[left_lane_inds] + lanePixelRange[0]
 		rightx = nonzerox[right_lane_inds]
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
+		
+		print(len(leftx), len(rightx))
+		if(len(leftx)<1000):
+			self.lane_msg.left_lane_validity = False
+		else:
+			self.lane_msg.left_lane_validity = True
+		if(len(rightx)<1000):
+			self.lane_msg.right_lane_validity = False
+		else:
+			self.lane_msg.right_lane_validity = True
 
 		pixel_fit_l  = np.polyfit(lefty , leftx, 2)
 		pixel_fit_r = np.polyfit(righty, rightx, 2)
@@ -427,7 +428,7 @@ class LaneDetect():
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
 			dis_fit_r = np.polyfit(ry,rx, 2)
 		
-		"""
+		
 			#plot lane in true distance
 			plt.figure("True distance fit")
 			plt.cla()
@@ -459,10 +460,15 @@ class LaneDetect():
 		plt.plot(x_l,480-y,'--',lw=3)
 		plt.plot(x_r,480-y,'--',lw=3)
 		plt.pause(0.01)
-		"""
 		
-		return pixel_fit_l, pixel_fit_r, dis_fit_l, dis_fit_r
-
+		
+		self.lane_msg.dimension = len(pixel_fit_l)
+		self.lane_msg.pixel_fit_left = pixel_fit_l
+		self.lane_msg.pixel_fit_right = pixel_fit_r
+		self.lane_msg.dis_fit_left = dis_fit_l
+		self.lane_msg.dis_fit_right = dis_fit_r
+		self.lane_msg.lanePixelRange = lanePixelRange
+		
 
 	def find_line_by_previous(self,binary_warped, left_fit, right_fit):
 		nonzero = binary_warped.nonzero()
@@ -573,9 +579,9 @@ class image_converter:
 			print(e)
 			return 
 			
-		lane_msg = self.lane_detect.processing(frame, show_result=False)
+		self.lane_detect.processing(frame, show_result=False)
 		
-		self.pub_lane_msg.publish(lane_msg)
+		self.pub_lane_msg.publish(self.lane_detect.lane_msg)
 		
 	def config_callback(self,config, level):
 		self.lane_detect.setThreshold(config)
