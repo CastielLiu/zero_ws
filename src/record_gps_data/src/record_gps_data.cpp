@@ -81,13 +81,14 @@ void Record::gps_callback(const gps_msgs::Inspvax::ConstPtr & gps)
 {
 	current_point.latitude = gps->latitude;
 	current_point.longitude = gps->longitude;
-		
-	if(sample_distance_*sample_distance_ <= calculate_dis2(current_point,last_point))
+	float dis2 = calculate_dis2(current_point,last_point);
+	
+	if(sample_distance_*sample_distance_ <= dis2)
 	{
 		fprintf(fp,"%.8f\t%.8f\r\n",current_point.longitude,current_point.latitude);
 		fflush(fp);
 		
-		ROS_INFO("%.8f\t%.8f\r\n",current_point.longitude,current_point.latitude);
+		ROS_INFO("dis2:%f\t %.8f\t%.8f\r\n",dis2, current_point.longitude,current_point.latitude);
 		last_point = current_point;
 	}
 }
