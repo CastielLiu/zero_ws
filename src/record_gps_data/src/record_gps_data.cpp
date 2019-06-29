@@ -53,7 +53,7 @@ bool Record::init()
 	ros::NodeHandle nh;
 	ros::NodeHandle private_nh("~");
 	
-	private_nh.param<std::string>("path_points_file",path_points_file_,"/home/huang/zero_ws/src/gps_data/gps_data.txt");
+	private_nh.param<std::string>("path_points_file",path_points_file_,"");
 	private_nh.param<float>("sample_distance",sample_distance_,0.1);
 	gps_sub= nh.subscribe("/gps",1,&Record::gps_callback,this);
     

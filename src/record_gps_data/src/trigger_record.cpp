@@ -35,6 +35,8 @@ class Record
 		ros::Subscriber gps_sub;
 		bool is_gps_ok_;
 		int system_delay_;
+		std::string key_device_;
+		std::string mouse_device_;
 		
 	public:
 		Record();
@@ -70,6 +72,8 @@ bool Record::init()
 	ros::NodeHandle private_nh("~");
 	
 	private_nh.param<std::string>("file_name",file_name_,"");
+	private_nh.param<std::string>("key_device",key_device_,"key device empty!!");
+	
 	if(file_name_.empty())
 	{
 		ROS_ERROR("no input file !!");
@@ -87,7 +91,7 @@ bool Record::init()
 		return false;
 	}
 	
-	if(!keyEvent.init(KeyEvent::ONLY_KEYBORD))
+	if(!keyEvent.init(key_device_.c_str(), KeyEvent::ONLY_KEYBORD))
 		return false;
 	
 	return true;
@@ -106,7 +110,7 @@ void Record::run()
 		if(keyEvent.keyMonitor(KeyEvent::KEY_Enter, KeyEvent::KEY_Up))
 			this->recordToFile();
 		usleep(30000);
-		
+	
 	}
 }
 

@@ -47,7 +47,7 @@ public:
 		}
 	}
 	
-	bool init(mode_t mode)
+	bool init(const char device[], mode_t mode)
 	{
 		mode_ = mode;
 		
@@ -56,14 +56,13 @@ public:
 			//event1 wendao's vmware
 			//event7 little_ant computer
 			
-			const char key_device[] = "/dev/input/event4";
-			keys_fd=open(key_device, O_RDONLY & ~O_NONBLOCK);
+			keys_fd=open(device, O_RDONLY & ~O_NONBLOCK);
 			if(keys_fd<=0)
 			{
-				printf("open %s failed !\n",key_device);
+				printf("open %s failed !\n",device);
 				return false;
 			}
-			printf("open %s ok !\n",key_device);
+			printf("open %s ok !\n",device);
 		}
 		if(ONLY_MOUSE==mode || KEYBORD_AND_MOUSE==mode)
 		{
@@ -81,6 +80,7 @@ public:
 	bool keyMonitor(const keyCode_t code, key_status_t status)
 	{
 		bool is_ok = false;
+		
 		if(ONLY_KEYBORD==mode_ || KEYBORD_AND_MOUSE==mode_)
 			read(keys_fd,&key_event,sizeof(struct input_event));
 		if(ONLY_MOUSE==mode_ || KEYBORD_AND_MOUSE==mode_)

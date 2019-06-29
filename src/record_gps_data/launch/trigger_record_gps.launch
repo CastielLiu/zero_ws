@@ -1,10 +1,13 @@
 <!-- -->
 <launch>
 	<arg name="is_novatel" default="false"/>
+	<arg name="is_nuogeng" default="true"/>
 
 	<node name="trigger_record_node" pkg="record_gps_data" type="trigger_record_node" output="screen">
 		<param name="file_name" value="$(find grid_tracking)/vertex_file/vertexes.txt"/>
 		<param name="min_sample_distance" value="0.1"/>
+		<param name="key_device" value="/dev/input/event2"/>
+		
 	</node>
 	
 	<group if="$(arg is_novatel)">
@@ -18,5 +21,12 @@
 			<param name="inspvax_topic" value = "/gps" />
 		</node>
 	
+	</group>
+	
+	<group if="$(arg is_novatel)">
+		<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
+			<param name ="port_name" value="/dev/ttyUSB0"/>
+			<param name ="baudrate" value="115200"/>
+		</node>
 	</group>
 </launch>
