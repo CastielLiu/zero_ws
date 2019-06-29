@@ -49,10 +49,11 @@ class Video2ROS():
 				rospy.signal_shutdown("quit")
 			
 	def publishVideo(self,threadName):
+		duration = 1.0/self.frameRate
 		while not rospy.is_shutdown():
 			if self.image_msg is not None:
 				self.pub.publish(self.image_msg)
-			time.sleep(0.05)
+			time.sleep(duration)
 			
 			
 		

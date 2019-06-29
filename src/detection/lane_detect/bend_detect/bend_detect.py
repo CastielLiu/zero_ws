@@ -254,7 +254,7 @@ class LaneDetect():
 		#x_thresh = self.abs_sobel_thresh(img, orient='x')
 		#cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
 	
-		hls_thresh_l = self.hls_select(img,channel='l')
+		#hls_thresh_l = self.hls_select(img,channel='l')
 		#hls_thresh_s = self.hls_select(img,channel='s')
 		
 		
@@ -280,7 +280,7 @@ class LaneDetect():
 		
 		if self.__debug:
 			#cv2.imshow('x_thresh',x_thresh)
-			cv2.imshow('hls_thresh_l',hls_thresh_l)
+			#cv2.imshow('hls_thresh_l',hls_thresh_l)
 			
 			#cv2.imshow('dir_thresh',dir_thresh)
 			cv2.imshow('mag_thresh',mag_thresh)
@@ -326,12 +326,12 @@ class LaneDetect():
 		
 		histogram = np.sum(ROI*wight, axis=0)
 		
-		
+		"""
 		plt.figure("Histogram")
 		plt.cla()
 		plt.plot(range(len(histogram)),histogram)
 		plt.pause(0.01)
-		
+		"""
 		
 		# Find the peak of the left and right halves of the histogram
 		# These will be the starting point for the left and right lines
@@ -342,7 +342,7 @@ class LaneDetect():
 		#print(leftx_base,rightx_base)
 
 		# Choose the number of sliding windows
-		nwindows = 9
+		nwindows = 15
 		# Set height of windows
 		window_height = np.int(ROI.shape[0] / nwindows)
 		# Identify the x and y positions of all nonzero pixels in the image
@@ -390,11 +390,12 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-		#"""
+		"""
 			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
 			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
 		cv2.imshow("ROI_rects",ROI*255)
-		#"""
+		cv2.waitKey(1)
+		"""
 		
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
@@ -406,7 +407,7 @@ class LaneDetect():
 		rightx = nonzerox[right_lane_inds]
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 		
-		print(len(leftx), len(rightx))
+		#print(len(leftx), len(rightx))
 		if(len(leftx)<1000):
 			self.lane_msg.left_lane_validity = False
 		else:
@@ -422,14 +423,15 @@ class LaneDetect():
 		if g_is_camera_info_ok:
 			ly = [g_pixel2dis_y[y] for y in lefty]
 			lx = [g_pixel2dis_x[leftx[i],lefty[i]] for i in range(len(leftx))]
-			dis_fit_l = np.polyfit(ly,lx, 2)
+			dis_fit_l = np.polyfit(ly,lx, 3)
 			
 			ry = [g_pixel2dis_y[y] for y in righty]
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
-			dis_fit_r = np.polyfit(ry,rx, 2)
+			dis_fit_r = np.polyfit(ry,rx, 3)
 		
 		
 			#plot lane in true distance
+		"""
 			plt.figure("True distance fit")
 			plt.cla()
 			plt.plot(lx,ly,'.')
@@ -438,7 +440,7 @@ class LaneDetect():
 			near_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[1],1]
 			far_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[0],1]
 			
-			print(near_dis,far_dis)
+			#print(near_dis,far_dis)
 			
 			y = np.linspace(near_dis,far_dis,50)
 			x_l = np.polyval(dis_fit_l,y)
@@ -450,6 +452,7 @@ class LaneDetect():
 			plt.pause(0.01)
 		
 		#plot lane in pixels
+		
 		plt.figure("Pixel fit")
 		plt.cla()
 		plt.plot(leftx,480-lefty,'.')
@@ -460,7 +463,7 @@ class LaneDetect():
 		plt.plot(x_l,480-y,'--',lw=3)
 		plt.plot(x_r,480-y,'--',lw=3)
 		plt.pause(0.01)
-		
+		"""
 		
 		self.lane_msg.dimension = len(pixel_fit_l)
 		self.lane_msg.pixel_fit_left = pixel_fit_l

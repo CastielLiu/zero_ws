@@ -37,16 +37,25 @@ float polyval(const std::vector<float>& fit, float var)
 
 void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg)
 {
-	if(!msg->validity)
+	/*if(!msg->validity)
 	{
 		pub_controlCmd_.publish(cmd_);
 		return ;
-	}
+	}*/
 	
 	float left_point_x = polyval(msg->dis_fit_left,foresight_distance_);
 	float right_point_x = polyval(msg->dis_fit_right,foresight_distance_);
-	float target_point_x = (left_point_x + right_point_x) /2;
-	float target_point_y = foresight_distance_;
+	
+	float target_point_x,
+		  target_point_y = foresight_distance_;
+	
+	if(msg->left_lane_validity && (!msg->right_lane_validity))
+		target_point_x = left_point_x +0.6;
+	else if(msg->right_lane_validity && (!msg->left_lane_validity))
+		target_point_x = right_point_x - 0.6;
+	else
+		target_point_x = (left_point_x + right_point_x) /2;
+	
 	float L = sqrt(target_point_x*target_point_x+target_point_y*target_point_y);
 	float delta = atan2(target_point_x,target_point_y);
 	float steering_radius = 0.5*L/sin(delta);
