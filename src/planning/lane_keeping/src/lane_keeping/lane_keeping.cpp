@@ -43,16 +43,21 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 		return ;
 	}*/
 	
-	float left_point_x = polyval(msg->dis_fit_left,foresight_distance_);
-	float right_point_x = polyval(msg->dis_fit_right,foresight_distance_);
+	float foresight_dis = foresight_distance_;
+	
+	if((!msg->left_lane_validity) || (!msg->right_lane_validity))
+		foresight_dis = 2.0;
+	
+	float left_point_x = polyval(msg->dis_fit_left,foresight_dis);
+	float right_point_x = polyval(msg->dis_fit_right,foresight_dis);
 	
 	float target_point_x,
-		  target_point_y = foresight_distance_;
+		 target_point_y = foresight_dis;
 	
 	if(msg->left_lane_validity && (!msg->right_lane_validity))
-		target_point_x = left_point_x +0.6;
+		target_point_x = left_point_x +1.0;
 	else if(msg->right_lane_validity && (!msg->left_lane_validity))
-		target_point_x = right_point_x - 0.6;
+		target_point_x = right_point_x - 1.0;
 	else
 		target_point_x = (left_point_x + right_point_x) /2;
 	

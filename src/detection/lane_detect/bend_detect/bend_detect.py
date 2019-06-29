@@ -408,11 +408,11 @@ class LaneDetect():
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 		
 		#print(len(leftx), len(rightx))
-		if(len(leftx)<1000):
+		if(len(leftx)<1500):
 			self.lane_msg.left_lane_validity = False
 		else:
 			self.lane_msg.left_lane_validity = True
-		if(len(rightx)<1000):
+		if(len(rightx)<1500):
 			self.lane_msg.right_lane_validity = False
 		else:
 			self.lane_msg.right_lane_validity = True
@@ -602,7 +602,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 2.39   #1.457
+	l0 = 2.59   #1.457
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('pixel2dis.txt')
 
