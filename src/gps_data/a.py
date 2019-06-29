@@ -9,7 +9,7 @@ def main(argv):
 	if(len(argv)==2):
 		file_name1 = argv[1]
 		with open(file_name1,'r') as f:
-		lines = f.readlines()
+			lines = f.readlines()
 	
 		for line in lines:
 			lon,lat = line.split()
@@ -19,10 +19,6 @@ def main(argv):
 
 	plt.plot(g_latitudes,g_longitudes,'r--')
 		
-		
-		
-	else:
-		file_name="gps_data.txt"
 		
 	
 	plt.show()

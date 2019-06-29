@@ -14,6 +14,13 @@
 	<node type="base_control_node" pkg ="base_control" name="base_control_node" >
 		<param name ="stm32_port_name"   value="/dev/ttyTHS2"/>
 	</node>
+	
+	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
+	
+		<param name ="port_name" value="/dev/ttyUSB0"/>
+		<param name ="baudrate" value="115200"/>
+	</node>
+	
 
 </launch>
 
