@@ -55,9 +55,9 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 		 target_point_y = foresight_dis;
 	
 	if(msg->left_lane_validity && (!msg->right_lane_validity))
-		target_point_x = left_point_x +1.0;
+		target_point_x = left_point_x +0.75;
 	else if(msg->right_lane_validity && (!msg->left_lane_validity))
-		target_point_x = right_point_x - 1.0;
+		target_point_x = right_point_x - 0.75;
 	else
 		target_point_x = (left_point_x + right_point_x) /2;
 	
@@ -74,13 +74,18 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 	*/
 	
 	cmd_.set_steeringAngle = -saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
-		
 	cmd_.set_speed = lane_keeping_speed_;
-	
-	ROS_INFO("target_point x:%f\ty:%f",target_point_x,target_point_y);
-	ROS_INFO("delta:%.2f\t radius:%.2f\t angle:%.2f",rad2deg(delta),steering_radius,cmd_.set_steeringAngle);
-	
 	pub_controlCmd_.publish(cmd_);
+	
+	
+	static int _count=0;
+	if(_count%10==0)
+	{
+		ROS_INFO("target_point x:%f\ty:%f",target_point_x,target_point_y);
+		ROS_INFO("delta:%.2f\t radius:%.2f\t angle:%.2f",rad2deg(delta),steering_radius,cmd_.set_steeringAngle);
+	}
+	++ _count;
+	
 	
 }
 

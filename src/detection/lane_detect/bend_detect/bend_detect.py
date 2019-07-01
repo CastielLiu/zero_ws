@@ -128,24 +128,7 @@ class LaneDetect():
 	def __init__(self):
 		self.__image_height = 480
 		self.__image_width = 640
-		self.__cut_height = 0				##@param
-		self.__draw_y = 355					##@param  
-		self.__offset = 180 #pixel
-		self.__angleOffset = 1.1/180.0*np.pi##@param 
-		self.__A = (10,328)					##@param
-		self.__B = (278,self.__cut_height)	##@param
-		self.__C = (378,self.__cut_height)	##@param
-		self.__D = (639,328)				##@param
-		self.__A_ = (self.__A[0]+self.__offset,self.__image_height-1)
-		self.__B_ = (self.__A[0]+self.__offset, 0)
-		self.__C_ = (self.__D[0]-self.__offset,0)
-		self.__D_ = (self.__D[0]-self.__offset,self.__image_height-1)
-		self.__srcPoints = np.float32([self.__A ,self.__B ,self.__C ,self.__D ])
-		self.__dstPoints = np.float32([self.__A_,self.__B_,self.__C_,self.__D_])
-		self.__M = cv2.getPerspectiveTransform(self.__srcPoints,self.__dstPoints)
-		self.__Minv = cv2.getPerspectiveTransform(self.__dstPoints,self.__srcPoints)
-		self.__xmPerPixel = 0.90/(self.__D_[0]-self.__A_[0])		##@param
-		self.__ymPerpixel = 5.4/(self.__D_[1]-self.__C_[1])	##@param
+		
 		self.__left_line = Line()
 		self.__right_line= Line()
 		self.__sobel_thresh_x = (57,255)
@@ -159,8 +142,9 @@ class LaneDetect():
 		self.__mag_thresh = (174,255)
 		
 		self.__debug = False
-		self.area = DrawArea()
-		self.area.Minv =  list(np.reshape(self.__Minv,(1,9))[0])
+		self.__calibrate = False
+		self.__fitNum = 3
+		
 		self.lane_msg = Lane()
 		
 		self.last_leftx_base = -1
@@ -179,6 +163,10 @@ class LaneDetect():
 	
 	def setDebug(self,status):
 		self.__debug = status
+	def setCaibrate(self,status):
+		self.__calibrate = status
+	def setFitNum(self,num):
+		self.__fitNum = int(num)
 		
 	def abs_sobel_thresh(self,img,orient='x'):
 		gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
@@ -448,42 +436,40 @@ class LaneDetect():
 		else:
 			self.lane_msg.right_lane_validity = True
 
-		pixel_fit_l  = np.polyfit(lefty , leftx, 3)
-		pixel_fit_r = np.polyfit(righty, rightx, 3)
+		pixel_fit_l  = np.polyfit(lefty , leftx, self.__fitNum)
+		pixel_fit_r = np.polyfit(righty, rightx, self.__fitNum)
 		
 		if g_is_camera_info_ok:
 			ly = [g_pixel2dis_y[y] for y in lefty]
 			lx = [g_pixel2dis_x[leftx[i],lefty[i]] for i in range(len(leftx))]
-			dis_fit_l = np.polyfit(ly,lx, 3)
+			dis_fit_l = np.polyfit(ly,lx, self.__fitNum)
 			
 			ry = [g_pixel2dis_y[y] for y in righty]
 			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
-			dis_fit_r = np.polyfit(ry,rx, 3)
-		
-		
+			dis_fit_r = np.polyfit(ry,rx, self.__fitNum)
+
 			#plot lane in true distance
-		"""
-			plt.figure("True distance fit")
-			plt.cla()
-			plt.plot(lx,ly,'.')
-			plt.plot(rx,ry,'.')
+			if(self.__calibrate):
+				plt.figure("True distance fit")
+				plt.cla()
+				plt.plot(lx,ly,'.')
+				plt.plot(rx,ry,'.')
 			
-			near_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[1],1]
-			far_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[0],1]
+				near_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[1],1]
+				far_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[0],1]
 			
-			#print(near_dis,far_dis)
+				#print(near_dis,far_dis)
 			
-			y = np.linspace(near_dis,far_dis,50)
-			x_l = np.polyval(dis_fit_l,y)
-			x_r = np.polyval(dis_fit_r,y)
+				y = np.linspace(near_dis,far_dis,50)
+				x_l = np.polyval(dis_fit_l,y)
+				x_r = np.polyval(dis_fit_r,y)
 			
-			plt.plot(x_l,y,'--')
-			plt.plot(x_r,y,'--')
-			plt.grid('on')
-			plt.pause(0.01)
-		
+				plt.plot(x_l,y,'--')
+				plt.plot(x_r,y,'--')
+				plt.grid('on')
+				plt.pause(0.01)
 		#plot lane in pixels
-		
+		"""
 		plt.figure("Pixel fit")
 		plt.cla()
 		plt.plot(leftx,480-lefty,'.')
@@ -594,8 +580,11 @@ class LaneDetect():
 		
 class image_converter:
 	def __init__(self,is_reconfig=False):
+		
 		self.lane_detect = LaneDetect()
-		#self.lane_detect.setDebug(True)
+		self.lane_detect.setDebug(rospy.get_param('~is_debug'))
+		self.lane_detect.setCaibrate(rospy.get_param('~is_calibrate'))
+		self.lane_detect.setFitNum(rospy.get_param('~curve_fit_num'))
 		
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=0)
 		self.bridge = CvBridge()
@@ -638,7 +627,7 @@ def cameraInfo_callback(in_message):
 
 def main(args):
 	rospy.init_node('lane_detect')
-	is_debug = rospy.get_param('~is_debug')
+	
 	is_reconfig = rospy.get_param('~is_reconfig')
 	
 	cameraInfo_sub = rospy.Subscriber("/camera_info",CameraInfo, cameraInfo_callback)
@@ -648,9 +637,6 @@ def main(args):
 	else:
 		ic = image_converter(is_reconfig)
 	
-	if is_debug is not None:
-		ic.lane_detect.setDebug(is_debug)
-
 	try:
 		rospy.spin()
 	except KeyboardInterrupt:
