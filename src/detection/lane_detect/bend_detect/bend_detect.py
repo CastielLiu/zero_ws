@@ -162,6 +162,9 @@ class LaneDetect():
 		self.area = DrawArea()
 		self.area.Minv =  list(np.reshape(self.__Minv,(1,9))[0])
 		self.lane_msg = Lane()
+		
+		self.last_leftx_base = -1
+		self.last_rightx_base = -1
 	
 	def setThreshold(self,config):
 		self.__sobel_thresh_x = (config.x_sobel_thresh_min,config.x_sobel_thresh_max)
@@ -235,11 +238,13 @@ class LaneDetect():
 		binary_output[(gradmag >= self.__mag_thresh[0]) & (gradmag <= self.__mag_thresh[1])] = 255
 		return binary_output
 		
-	def luv_select(self, img):
+	def luv_select(self, img ,channel='l'):
 		luv = cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
-		l_channel = luv[:, :, 0]
-		binary_output = np.zeros_like(l_channel)
-		binary_output[(l_channel > self.__luv_l_thresh[0]) & (l_channel <= self.__luv_l_thresh[1])] = 255
+		
+		if(channel=='l'):
+			l_channel = luv[:, :, 0]
+			binary_output = np.zeros_like(l_channel)
+			binary_output[(l_channel > self.__luv_l_thresh[0]) & (l_channel <= self.__luv_l_thresh[1])] = 255
 		return binary_output
 
 	def lab_select(self, img, thresh=(0, 255)):
@@ -251,41 +256,52 @@ class LaneDetect():
 	
 		
 	def thresholding(self,img):
-		#x_thresh = self.abs_sobel_thresh(img, orient='x')
-		#cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
 	
-		#hls_thresh_l = self.hls_select(img,channel='l')
-		#hls_thresh_s = self.hls_select(img,channel='s')
+		"""
+		x_thresh = self.abs_sobel_thresh(img, orient='x')
 		
+		#cv2.line(x_thresh,(self.__image_width,self.__draw_y),(self.__image_width-self.__offset,self.__image_height),(0,0,0),10)
 		
-		#dir_thresh = self.dir_threshold(img,sobel_kernel=3)
+		hls_thresh_l = self.hls_select(img,channel='l')
+		hls_thresh_s = self.hls_select(img,channel='s')
+		
+		lab_thresh = self.lab_select(img)
+		dir_thresh = self.dir_threshold(img,sobel_kernel=3)
 		mag_thresh = self.mag_threshold(img)
-		luv_thresh = self.luv_select(img)
+		"""
 		
-		#lab_thresh = self.lab_select(img)
+		luv_l_thresh = self.luv_select(img,'l')
 		
 		thresholded = np.zeros_like(img)
 		
 		#thresholded[(hls_thresh_l == 255) & (hls_thresh_s == 255) | (x_thresh == 255) ]=255
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
-		thresholded[(mag_thresh == 255) | (luv_thresh == 255) ]=1
+		thresholded[(luv_l_thresh == 255) ]=1
 		
 		rect = np.array([ [80,479], [220,245], [410,245], [514,479] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
 		
-		#cv2.line(thresholded,(0,self.__draw_y),(self.__offset,self.__image_height),(0,0,0),20)
-		#cv2.line(thresholded,(self.__image_width,self.__draw_y),(self.__image_width - self.__offset,self.__image_height),(0,0,0),20)
-		
 		if self.__debug:
-			#cv2.imshow('x_thresh',x_thresh)
-			#cv2.imshow('hls_thresh_l',hls_thresh_l)
+			"""
+			cv2.namedWindow('x_thresh',0)
+			cv2.imshow('x_thresh',x_thresh)
 			
-			#cv2.imshow('dir_thresh',dir_thresh)
+			cv2.namedWindow('hls_thresh_l',0)
+			cv2.imshow('hls_thresh_l',hls_thresh_l)
+			
+			cv2.namedWindow('dir_thresh',0)
+			cv2.imshow('dir_thresh',dir_thresh)
+			
+			cv2.namedWindow('mag_thresh',0)
 			cv2.imshow('mag_thresh',mag_thresh)
-			cv2.imshow('luv_thresh',luv_thresh)
+			"""
 			
+			cv2.namedWindow('luv_l_thresh',0)
+			cv2.imshow('luv_l_thresh',luv_l_thresh)
+			
+			cv2.namedWindow('Binary graph',0)
 			cv2.imshow("Binary graph",thresholded*255)
 			cv2.waitKey(1)
 		
@@ -338,8 +354,20 @@ class LaneDetect():
 		midpoint = np.int(histogram.shape[0] / 2)
 		leftx_base = np.argmax(histogram[:midpoint])
 		rightx_base = np.argmax(histogram[midpoint:]) + midpoint
+			
+		# Current positions to be updated for each window
+		if(self.last_leftx_base!=-1 and math.fabs(self.last_leftx_base-leftx_base)>30):
+			leftx_current = self.last_leftx_base
+		else:
+			leftx_current = leftx_base
+			
+		if(self.last_rightx_base!=-1 and math.fabs(self.last_rightx_base-rightx_base)>30):
+			rightx_current = self.last_rightx_base
+		else:
+			rightx_current = rightx_base
 		
-		#print(leftx_base,rightx_base)
+		self.last_leftx_base = leftx_current
+		self.last_rightx_base = rightx_current
 
 		# Choose the number of sliding windows
 		nwindows = 15
@@ -349,13 +377,11 @@ class LaneDetect():
 		nonzero = ROI.nonzero()
 		nonzeroy = np.array(nonzero[0])
 		nonzerox = np.array(nonzero[1])
-		# Current positions to be updated for each window
-		leftx_current = leftx_base
-		rightx_current = rightx_base
+	
 		# Set the width of the windows +/- margin
 		margin = 40
 		# Set minimum number of pixels found to recenter window
-		minpix = 30
+		minpix = 100
 		# Create empty lists to receive left and right lane pixel indices
 		left_lane_inds = []
 		right_lane_inds = []
@@ -376,8 +402,10 @@ class LaneDetect():
 			good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
 						       (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
 			# Append these indices to the lists
-			left_lane_inds.append(good_left_inds)
-			right_lane_inds.append(good_right_inds)
+			if(len(good_left_inds)>50):
+				left_lane_inds.append(good_left_inds)
+			if(len(good_right_inds)>50):
+				right_lane_inds.append(good_right_inds)
 			
 			#print(len(good_left_inds), len(good_right_inds))
 			
@@ -390,12 +418,15 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-		"""
-			cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
-			cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
-		cv2.imshow("ROI_rects",ROI*255)
-		cv2.waitKey(1)
-		"""
+			
+			if self.__debug:
+				cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
+				cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
+		if self.__debug:
+			cv2.namedWindow("ROI_rects",0)
+			cv2.imshow("ROI_rects",ROI*255)
+			cv2.waitKey(1)
+		
 		
 		# Concatenate the arrays of indices
 		left_lane_inds = np.concatenate(left_lane_inds)
@@ -417,8 +448,8 @@ class LaneDetect():
 		else:
 			self.lane_msg.right_lane_validity = True
 
-		pixel_fit_l  = np.polyfit(lefty , leftx, 2)
-		pixel_fit_r = np.polyfit(righty, rightx, 2)
+		pixel_fit_l  = np.polyfit(lefty , leftx, 3)
+		pixel_fit_r = np.polyfit(righty, rightx, 3)
 		
 		if g_is_camera_info_ok:
 			ly = [g_pixel2dis_y[y] for y in lefty]
@@ -567,7 +598,6 @@ class image_converter:
 		#self.lane_detect.setDebug(True)
 		
 		self.pub_lane_msg = rospy.Publisher("/lane",Lane,queue_size=0)
-		self.pub_draw_area = rospy.Publisher("/draw_area",DrawArea,queue_size=0)
 		self.bridge = CvBridge()
 		self.image_sub = rospy.Subscriber("/image_rectified",Image,self.image_callback, queue_size=1)
 		

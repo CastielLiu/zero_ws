@@ -1,7 +1,7 @@
 <!-- wendao   -->
 <launch>
 	<node name="bend_detect_node" pkg="lane_detect" type="bend_detect.py"  output="screen">
-		<param name="is_debug" value="true" />
+		<param name="is_debug" value="false" />
 		<param name="is_reconfig" value="true" />
 	</node>
 	

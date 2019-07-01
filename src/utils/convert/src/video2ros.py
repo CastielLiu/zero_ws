@@ -38,6 +38,7 @@ class Video2ROS():
 				break
 			self.image_msg = self.bridge.cv2_to_imgmsg(self.cv_image, "bgr8")
 			self.image_msg.header.stamp = rospy.Time().now()
+			cv2.namedWindow("image",0)
 			cv2.imshow("image",self.cv_image)
 			
 			if self.is_waitKey:
@@ -47,6 +48,8 @@ class Video2ROS():
 			#print(self.is_waitKey , key)
 			if(113 == key):
 				rospy.signal_shutdown("quit")
+			if(114 == key): #r  restart
+				break
 			
 	def publishVideo(self,threadName):
 		duration = 1.0/self.frameRate

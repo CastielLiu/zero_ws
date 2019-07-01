@@ -17,10 +17,11 @@ def main(argv):
 			g_latitudes.append(float(lat))
 
 
-	plt.plot(g_latitudes,g_longitudes,'r--')
+	plt.plot(g_latitudes,g_longitudes,'r--',label="reference path")
+	plt.plot(g_latitudes,g_longitudes,'b--',label="trajectory")
 		
-		
-	
+	plt.legend()
+	plt.savefig('a.pdf')
 	plt.show()
 """
 g_longitudes = []
@@ -36,9 +37,8 @@ for line in lines:
 
 
 plt.plot(g_latitudes,g_longitudes,'b--')
-
-plt.savefig('a.pdf')
 """
+
 	
 	
 if __name__=="__main__":
