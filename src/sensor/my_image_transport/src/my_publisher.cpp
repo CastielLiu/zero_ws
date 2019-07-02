@@ -9,11 +9,15 @@
 #define _NODE_NAME_ "image_publisher"
 using namespace cv;
 
+#include "opencv2/imgproc/detail/distortion_model.hpp"
+
 class ImageTalker
 {
 public:
 	ImageTalker():
-		is_draw_center_(false)
+		is_draw_center_(false),
+		cx_offset_(15),
+		cy_offset_(36)
 	{
 	}
 	void init(ros::NodeHandle& nh, ros::NodeHandle& nh_private,int cameraId)
@@ -38,6 +42,8 @@ public:
 		else
 		{
 			pub_ = it.advertise("/image_rectified", 1);
+			new_camera_instrinsics_ = getOptimalNewCameraMatrix(camera_instrinsics_,distortion_coefficients_,imgSize_,1.0);
+			ROI_rects_ = cv::Rect(cx_offset_,cy_offset_,imgSize_.width-2*cx_offset_, imgSize_.height-2*cy_offset_);
 			is_rectify_ = true;
 		}
 		camera_info_pub_ = nh.advertise<sensor_msgs::CameraInfo>("/camera_info", 1);
@@ -68,29 +74,32 @@ public:
 		sensor_msgs::ImagePtr msg;
 
 		ros::Rate loop_rate(frame_rate_);
+		
 		while (ros::ok())
 		{
 			cap >> frame;
 			//cv::flip(src,frame,-1); //将摄像头图像翻转一次再发布
 
-			if(!frame.empty()) 
+			if(!frame.empty())
 			{
 				if(is_rectify_)
 				{
-					cv::undistort(frame, src, camera_instrinsics_, distortion_coefficients_);
-					msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", src).toImageMsg();
+					cv::undistort(frame, src, camera_instrinsics_, distortion_coefficients_,new_camera_instrinsics_);
+					msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", src(ROI_rects_)).toImageMsg();
 					if(is_show_image_) 
 					{
 						if(is_draw_center_)
 						{
 							int cx = camera_info_msg_.K[2];
 							int cy = camera_info_msg_.K[5];
-							cv::line(frame,Point(frame.cols/2-10,cy),Point(frame.cols/2+10,cy),Scalar(255,0,0),1,8);
-							cv::line(frame,Point(frame.cols/2,cy-10),Point(frame.cols/2,cy+10),Scalar(255,0,0),1,8);
-							cv::circle(frame, Point(frame.cols/2,cy), 15, cv::Scalar(0,0,255), 1);
+							cv::line(src,Point(src.cols/2-10,cy),Point(src.cols/2+10,cy),Scalar(255,0,0),1,8);
+							cv::line(src,Point(src.cols/2,cy-10),Point(src.cols/2,cy+10),Scalar(255,0,0),1,8);
+							cv::circle(src, Point(src.cols/2,cy), 15, cv::Scalar(0,0,255), 1);
 						}
 						cv::namedWindow("image_rectified",cv::WINDOW_NORMAL); 
-						cv::imshow("image_rectified",frame); cv::waitKey(1);
+						cv::imshow("image_rectified",src); cv::waitKey(1);
+						//cv::namedWindow("image_raw",cv::WINDOW_NORMAL); 
+						//cv::imshow("image_raw",frame);
 					}
 				}
 				else
@@ -163,6 +172,8 @@ public:
 				else
 					camera_info_msg_.P[row * 4 + col] = camera_instrinsics_.at<double>(row, col);
 			}
+		camera_info_msg_.P[2] -= cx_offset_; //cx
+		camera_info_msg_.P[6] -= cy_offset_; //cy
 		for (int row = 0; row < distortion_coefficients_.rows; row++)
 			for (int col = 0; col < distortion_coefficients_.cols; col++)
 				camera_info_msg_.D.push_back(distortion_coefficients_.at<double>(row, col));
@@ -183,6 +194,7 @@ private:
 	ros::Publisher camera_info_pub_;
 	ros::Timer timer_;
 	
+	cv::Mat new_camera_instrinsics_;
 	cv::Mat camera_instrinsics_;
 	cv::Mat distortion_coefficients_;
 	std::string distModel_;
@@ -192,6 +204,10 @@ private:
 	int frame_rate_;
 	bool is_show_image_;
 	bool is_draw_center_;
+	
+	int cx_offset_;
+	int cy_offset_;
+	cv::Rect ROI_rects_;
 };
 
 
