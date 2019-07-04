@@ -266,7 +266,7 @@ class LaneDetect():
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
 		thresholded[(luv_l_thresh == 255) ]=1
 		
-		rect = np.array([ [80,479], [220,245], [410,245], [514,479] ])
+		rect = np.array([ [80,479], [220,220], [410,220], [514,479] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
@@ -304,7 +304,7 @@ class LaneDetect():
 		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
-		lanePixelRange = [130,340]  #np.int(thresholded.shape[0]/6),480
+		lanePixelRange = [142,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		self.find_line(thresholded, lanePixelRange) 
 		
@@ -344,12 +344,13 @@ class LaneDetect():
 		rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 			
 		# Current positions to be updated for each window
-		if(self.last_leftx_base!=-1 and math.fabs(self.last_leftx_base-leftx_base)>30):
+		max_offset = 50
+		if(self.last_leftx_base!=-1 and math.fabs(self.last_leftx_base-leftx_base)>max_offset):
 			leftx_current = self.last_leftx_base
 		else:
 			leftx_current = leftx_base
 			
-		if(self.last_rightx_base!=-1 and math.fabs(self.last_rightx_base-rightx_base)>30):
+		if(self.last_rightx_base!=-1 and math.fabs(self.last_rightx_base-rightx_base)>max_offset):
 			rightx_current = self.last_rightx_base
 		else:
 			rightx_current = rightx_base
@@ -427,11 +428,11 @@ class LaneDetect():
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 		
 		#print(len(leftx), len(rightx))
-		if(len(leftx)<1500):
+		if(len(leftx)<800):
 			self.lane_msg.left_lane_validity = False
 		else:
 			self.lane_msg.left_lane_validity = True
-		if(len(rightx)<1500):
+		if(len(rightx)<800):
 			self.lane_msg.right_lane_validity = False
 		else:
 			self.lane_msg.right_lane_validity = True
@@ -621,7 +622,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 2.59   #1.457
+	l0 = 4.50   #1.457  3.89
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('pixel2dis.txt')
 

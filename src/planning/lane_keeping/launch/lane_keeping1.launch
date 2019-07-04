@@ -4,6 +4,9 @@
 	<node name="bend_detect" pkg="lane_detect" type="bend_detect.py" >
 		<param name="is_debug" value="false" />
 		<param name="is_reconfig" value="true" />
+		<param name="is_calibrate" value="false"/>
+		<param name="curve_fit_num" value="4" />
+		
 	</node>
 	
 	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" output="screen">
