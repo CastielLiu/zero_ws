@@ -278,7 +278,10 @@ class LaneDetect():
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
 		thresholded[(luv_l_thresh == 255) ]=1
 		
-		rect = np.array([ [80,479], [220,220], [410,220], [514,479] ])
+		rect = np.array([ [80,479], [220,311], [410,311], [514,479] ])
+		cv2.fillConvexPoly(thresholded, rect, 0)
+		
+		rect = np.array([ [239,304], [239,244], [343,244], [343,304] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
@@ -316,7 +319,7 @@ class LaneDetect():
 		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
-		lanePixelRange = [130,340]  #np.int(thresholded.shape[0]/6),480
+		lanePixelRange = [150,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		self.find_line(thresholded, lanePixelRange) 
 		
@@ -471,9 +474,9 @@ class LaneDetect():
 			for line in lines:
 				line = line[0]
 				#print(line)
-				if(math.fabs(math.atan2(line[3]-line[1],line[2]-line[0])*180.0/math.pi)<3.0):
+				if(math.fabs(math.atan2(line[3]-line[1],line[2]-line[0])*180.0/math.pi)<5.0):
 					#print(g_pixel2dis_y[line[3]+lanePixelRange[0]])
-					if(g_pixel2dis_y[line[3]+lanePixelRange[0]]<3.2):
+					if(g_pixel2dis_y[line[3]+lanePixelRange[0]]<4.0):
 						self.lane_msg.leftRightAngle = True
 		"""
 		#print(len(lines))
@@ -695,7 +698,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 4.50   #1.457  3.89
+	l0 = 2.8   #1.457  3.89
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('pixel2dis.txt')
 

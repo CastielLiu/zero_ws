@@ -15,7 +15,7 @@ GridTracking::~GridTracking(){}
 
 bool GridTracking::generatePathPoints(std::vector<gpsMsg_t>& path_points)
 {
-	int indexes[]={0,4,2};
+	int indexes[]={0,1,8,3,4,5,8,7,0,1,2,3,4,5,8,7};
 	
 	for(int i=0; i<sizeof(indexes)/sizeof(int)-1; i++)
 	{
@@ -121,7 +121,7 @@ void GridTracking::run()
 		
 		float turning_radius = (0.5 * dis_yaw.first)/sin(deg2rad(yaw_err));
 		
-		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
+		float t_roadWheelAngle = -generateRoadwheelAngleByRadius(turning_radius);
 		
 		saturate_cast<float>(t_roadWheelAngle,25.0);
 		

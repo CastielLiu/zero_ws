@@ -4,9 +4,6 @@ import math
 import sys
 import numpy as np
  
-g_longitudes = []
-g_latitudes =[]
-
 
 def BLH2XYZ(lon,lat,H=0.0):
 	B = lat*math.pi/180.0
@@ -21,13 +18,15 @@ def BLH2XYZ(lon,lat,H=0.0):
 	Y = (N+H)*cosB*math.sin(L)
 	Z = (N*(1-e2)+H)*sinB
 	return X,Y,Z
-	
+
 
 file_name = 'raw_path.txt'
 
 if len(sys.argv) >1:
 	file_name = sys.argv[1]
 
+g_longitudes = []
+g_latitudes =[]
 with open(file_name,'r') as f:
 	lines = f.readlines()
 	for line in lines:
@@ -35,9 +34,20 @@ with open(file_name,'r') as f:
 		g_longitudes.append(float(lon))
 		g_latitudes.append(float(lat))
 
-
-
 plt.figure(1)
 plt.plot(g_longitudes,g_latitudes,'r-*',lw=1)
+
+g_longitudes = []
+g_latitudes =[]
+file_name = 'trajectory.txt'
+with open(file_name,'r') as f:
+	lines = f.readlines()
+	for line in lines:
+		lon,lat = line.split()
+		g_longitudes.append(float(lon))
+		g_latitudes.append(float(lat))
+
+plt.plot(g_longitudes,g_latitudes,'b-*',lw=1,label="trajectory")
+plt.legend()
 
 plt.show()

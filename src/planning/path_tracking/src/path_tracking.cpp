@@ -103,7 +103,7 @@ void PathTracking::run()
 		
 		float turning_radius = (0.5 * dis_yaw.first)/sin(deg2rad(yaw_err));
 		
-		float t_roadWheelAngle = generateRoadwheelAngleByRadius(turning_radius);
+		float t_roadWheelAngle = -generateRoadwheelAngleByRadius(turning_radius);
 		
 		
 if(i%20==0){

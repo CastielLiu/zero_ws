@@ -62,7 +62,7 @@ bool BaseControl::init(int argc,char**argv)
 	ros::NodeHandle nh;
 	ros::NodeHandle nh_private("~");
 	
-	nh_private.param<std::string>("stm32_port_name", stm32_port_name_, "/dev/ttyUSB0");
+	nh_private.param<std::string>("stm32_port_name", stm32_port_name_, "/dev/ttyTHS2");
 	nh_private.param<float>("max_steering_speed",max_steering_speed_,5.0);
 	nh_private.param<int>("stm32_baudrate",stm32_baudrate_,115200);
 	
