@@ -37,16 +37,16 @@ float polyval(const std::vector<float>& fit, float var)
 
 void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg)
 {
-	/*if(!msg->validity)
-	{
-		pub_controlCmd_.publish(cmd_);
-		return ;
-	}*/
-	
+	static float lowSpeed = 1.0;
 	float foresight_dis = foresight_distance_;
 	
 	if((!msg->left_lane_validity) || (!msg->right_lane_validity))
+	{
 		foresight_dis = 1.5;
+		cmd_.set_speed = lowSpeed;
+	}
+	else
+		cmd_.set_speed = lane_keeping_speed_;
 	
 	float left_point_x = polyval(msg->dis_fit_left,foresight_dis);
 	float right_point_x = polyval(msg->dis_fit_right,foresight_dis);
@@ -65,16 +65,16 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 	float delta = atan2(target_point_x,target_point_y);
 	float steering_radius = 0.5*L/sin(delta);
 	
-	/*
-	float alpha = asin(msg->offset *cos(msg->theta) / foresight_distance_);
-	
-	float delta = -msg->theta -alpha;
-	
-	float steering_radius = 0.5*foresight_distance_ / sin(delta) ;
-	*/
+	if(msg->leftRightAngle == true)
+	{
+		float tempRadius = -2.0;
+		if(tempRadius < steering_radius)
+			steering_radius = tempRadius;
+		cmd_.set_speed = lowSpeed;
+	}
 	
 	cmd_.set_steeringAngle = -saturationEqual(generateRoadwheelAngleByRadius(steering_radius),15.0) * g_steering_gearRatio;
-	cmd_.set_speed = lane_keeping_speed_;
+	
 	pub_controlCmd_.publish(cmd_);
 	
 	
