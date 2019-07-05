@@ -470,9 +470,9 @@ class LaneDetect():
 		if lines is not None:
 			for line in lines:
 				line = line[0]
-				print(line)
+				#print(line)
 				if(math.fabs(math.atan2(line[3]-line[1],line[2]-line[0])*180.0/math.pi)<3.0):
-					print(g_pixel2dis_y[line[3]+lanePixelRange[0]])
+					#print(g_pixel2dis_y[line[3]+lanePixelRange[0]])
 					if(g_pixel2dis_y[line[3]+lanePixelRange[0]]<3.2):
 						self.lane_msg.leftRightAngle = True
 		"""
