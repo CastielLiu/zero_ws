@@ -71,6 +71,18 @@ def Pixel2dis(u,v):
 	return x,y
 """
 
+def drawLine(img,line,color,width=2):
+	rho,theta = line[0]
+	a = np.cos(theta)
+	b = np.sin(theta)
+	x0 = rho * a
+	y0 = rho * b
+	x1 = int(x0 + 1000*(-b))
+	y1 = int(y0 + 1000*(a))
+	x2 = int(x0 - 1000*(-b))
+	y2 = int(y0 - 1000*(a))
+	cv2.line(img,(x1,y1),(x2,y2),color,width)
+	
 # Define a class to receive the characteristics of each line detection
 class Line():
 	def __init__(self):
@@ -304,7 +316,7 @@ class LaneDetect():
 		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
-		lanePixelRange = [142,340]  #np.int(thresholded.shape[0]/6),480
+		lanePixelRange = [130,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		self.find_line(thresholded, lanePixelRange) 
 		
@@ -343,38 +355,48 @@ class LaneDetect():
 		leftx_base = np.argmax(histogram[:midpoint])
 		rightx_base = np.argmax(histogram[midpoint:]) + midpoint
 			
-		# Current positions to be updated for each window
-		max_offset = 50
-		if(self.last_leftx_base!=-1 and math.fabs(self.last_leftx_base-leftx_base)>max_offset):
+		"""
+		basePoint_maxOffset = 50 #pixel
+		if(self.last_leftx_base!=-1 and math.fabs(self.last_leftx_base-leftx_base)>basePoint_maxOffset):
 			leftx_current = self.last_leftx_base
 		else:
 			leftx_current = leftx_base
 			
-		if(self.last_rightx_base!=-1 and math.fabs(self.last_rightx_base-rightx_base)>max_offset):
+		if(self.last_rightx_base!=-1 and math.fabs(self.last_rightx_base-rightx_base)>basePoint_maxOffset):
 			rightx_current = self.last_rightx_base
 		else:
 			rightx_current = rightx_base
 		
 		self.last_leftx_base = leftx_current
 		self.last_rightx_base = rightx_current
-
+		"""
+		
+		leftx_current = leftx_base
+		rightx_current = rightx_base
+		
 		# Choose the number of sliding windows
 		nwindows = 15
 		# Set height of windows
 		window_height = np.int(ROI.shape[0] / nwindows)
 		# Identify the x and y positions of all nonzero pixels in the image
 		nonzero = ROI.nonzero()
-		nonzeroy = np.array(nonzero[0])
-		nonzerox = np.array(nonzero[1])
+		nonzeroy = nonzero[0]
+		nonzerox = nonzero[1]
 	
 		# Set the width of the windows +/- margin
 		margin = 40
 		# Set minimum number of pixels found to recenter window
-		minpix = 100
+		minpix = 80
 		# Create empty lists to receive left and right lane pixel indices
 		left_lane_inds = []
 		right_lane_inds = []
-
+		
+		leftRectInvalidCount = 0
+		rightRectInvalidCount = 0
+		startToRecordInvalidRect_left = False
+		startToRecordInvalidRect_right = False
+		
+		rectedROI = ROI.copy()
 		# Step through the windows one by one
 		for window in range(nwindows):
 			# Identify window boundaries in x and y (and right and left)
@@ -391,13 +413,22 @@ class LaneDetect():
 			good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
 						       (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
 			# Append these indices to the lists
-			if(len(good_left_inds)>50):
+			if(len(good_left_inds)>20 and leftRectInvalidCount<1):
 				left_lane_inds.append(good_left_inds)
-			if(len(good_right_inds)>50):
+				startToRecordInvalidRect_left = True
+			elif(startToRecordInvalidRect_left):
+				leftRectInvalidCount +=1
+			elif(window>nwindows/2):
+				leftRectInvalidCount = nwindows
+				
+			if(len(good_right_inds)>20 and rightRectInvalidCount<1):
 				right_lane_inds.append(good_right_inds)
-			
-			#print(len(good_left_inds), len(good_right_inds))
-			
+				startToRecordInvalidRect_right = True
+			elif(startToRecordInvalidRect_right):
+				rightRectInvalidCount +=1
+			elif(window>nwindows/2):
+				rightRectInvalidCount = nwindows
+							
 			# If you found > minpix pixels, recenter next window on their mean position
 			if len(good_left_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_left_inds], nonzerox[good_left_inds],1)
@@ -407,19 +438,55 @@ class LaneDetect():
 			if len(good_right_inds) > minpix:
 				tmp_fit = np.polyfit(nonzeroy[good_right_inds], nonzerox[good_right_inds],1)
 				rightx_current = np.int(np.polyval(tmp_fit,win_y_low-window_height/2))
-			
+					
 			if self.__debug:
-				cv2.rectangle(ROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
-				cv2.rectangle(ROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
+				cv2.rectangle(rectedROI,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),1,1)
+				cv2.rectangle(rectedROI,(win_xright_low,win_y_low),(win_xright_high,win_y_high),1,1)
 		if self.__debug:
 			cv2.namedWindow("ROI_rects",0)
-			cv2.imshow("ROI_rects",ROI*255)
+			cv2.imshow("ROI_rects",rectedROI*255)
 			cv2.waitKey(1)
 		
 		
 		# Concatenate the arrays of indices
-		left_lane_inds = np.concatenate(left_lane_inds)
-		right_lane_inds = np.concatenate(right_lane_inds)
+		if(len(left_lane_inds)>1):
+			left_lane_inds = np.concatenate(left_lane_inds)
+		if(len(right_lane_inds)>1):
+			right_lane_inds = np.concatenate(right_lane_inds)
+		
+		ROI[nonzeroy[left_lane_inds],nonzerox[left_lane_inds]] = 0
+		ROI[nonzeroy[right_lane_inds],nonzerox[right_lane_inds]] = 0
+		ROI *=255
+		
+		"""
+		cv2.namedWindow("1",0)
+		cv2.imshow("1",ROI)
+		#ROI = cv2.Canny(ROI,0,255)
+		#cv2.namedWindow("2",0)
+		#cv2.imshow("2",ROI)
+		"""
+		self.lane_msg.leftRightAngle = False
+		lines = cv2.HoughLinesP(ROI,1,np.pi/180,200,50,40)
+		if lines is not None:
+			for line in lines:
+				line = line[0]
+				print(line)
+				if(math.fabs(math.atan2(line[3]-line[1],line[2]-line[0])*180.0/math.pi)<3.0):
+					print(g_pixel2dis_y[line[3]+lanePixelRange[0]])
+					if(g_pixel2dis_y[line[3]+lanePixelRange[0]]<3.2):
+						self.lane_msg.leftRightAngle = True
+		"""
+		#print(len(lines))
+		lineImage = np.zeros_like(ROI)
+		if lines is not None:
+			for line in lines:
+				#print(line[0],type(line[0]),line[0][0],line[0][1],line[0][2],line[0][3])
+				cv2.line(lineImage,(line[0][0],line[0][1]),(line[0][2],line[0][3]),(255,255,255),3)
+				pass
+		cv2.namedWindow("lineImage",0)
+		cv2.imshow("lineImage",lineImage)
+		cv2.waitKey(1)
+		"""
 		
 		# Extract left and right line pixel positions
 		leftx = nonzerox[left_lane_inds]
@@ -436,37 +503,43 @@ class LaneDetect():
 			self.lane_msg.right_lane_validity = False
 		else:
 			self.lane_msg.right_lane_validity = True
-
-		pixel_fit_l  = np.polyfit(lefty , leftx, self.__fitNum)
-		pixel_fit_r = np.polyfit(righty, rightx, self.__fitNum)
+		pixel_fit_l = [0]
+		pixel_fit_r = [0]
+		if(len(leftx)>2):
+			pixel_fit_l  = np.polyfit(lefty , leftx, self.__fitNum)
+		if(len(rightx)>2):
+			pixel_fit_r = np.polyfit(righty, rightx, self.__fitNum)
 		
 		if g_is_camera_info_ok:
-			ly = [g_pixel2dis_y[y] for y in lefty]
-			lx = [g_pixel2dis_x[leftx[i],lefty[i]] for i in range(len(leftx))]
-			dis_fit_l = np.polyfit(ly,lx, self.__fitNum)
-			
-			ry = [g_pixel2dis_y[y] for y in righty]
-			rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
-			dis_fit_r = np.polyfit(ry,rx, self.__fitNum)
+			dis_fit_l = [0]
+			if(len(lefty)>2):
+				ly = [g_pixel2dis_y[y] for y in lefty]
+				lx = [g_pixel2dis_x[leftx[i],lefty[i]] for i in range(len(leftx))]
+				dis_fit_l = np.polyfit(ly,lx, self.__fitNum)
+			dis_fit_r = [0]
+			if(len(righty)>2):
+				ry = [g_pixel2dis_y[y] for y in righty]
+				rx = [g_pixel2dis_x[rightx[i],righty[i]] for i in range(len(rightx))]
+				dis_fit_r = np.polyfit(ry,rx, self.__fitNum)
 
 			#plot lane in true distance
 			if(self.__calibrate):
 				plt.figure("True distance fit")
 				plt.cla()
-				plt.plot(lx,ly,'.')
-				plt.plot(rx,ry,'.')
-			
 				near_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[1],1]
 				far_dis = g_pixel2dis[g_imageSize[0]//2,lanePixelRange[0],1]
-			
-				#print(near_dis,far_dis)
-			
 				y = np.linspace(near_dis,far_dis,50)
-				x_l = np.polyval(dis_fit_l,y)
-				x_r = np.polyval(dis_fit_r,y)
-			
-				plt.plot(x_l,y,'--')
-				plt.plot(x_r,y,'--')
+				
+				if(len(lefty)>2):
+					plt.plot(lx,ly,'.')
+					x_l = np.polyval(dis_fit_l,y)
+					plt.plot(x_l,y,'--')
+				
+				if(len(righty)>2):
+					plt.plot(rx,ry,'.')
+					x_r = np.polyval(dis_fit_r,y)
+					plt.plot(x_r,y,'--')
+				
 				plt.grid('on')
 				plt.pause(0.01)
 		#plot lane in pixels

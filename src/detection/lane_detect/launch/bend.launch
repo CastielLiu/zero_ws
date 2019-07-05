@@ -4,7 +4,7 @@
 		<param name="is_debug" value="true" />
 		<param name="is_reconfig" value="true" />
 		<param name="is_calibrate" value="true"/>
-		<param name="curve_fit_num" value="1" />
+		<param name="curve_fit_num" value="2" />
 		
 	</node>
 	

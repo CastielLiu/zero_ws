@@ -17,3 +17,5 @@ float32[] dis_fit_right
 
 #the range of lane in pixel from up to down
 uint16[] lanePixelRange
+
+bool leftRightAngle

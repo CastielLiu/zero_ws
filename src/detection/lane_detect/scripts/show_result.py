@@ -92,7 +92,6 @@ class ShowResult:
 		result = cv2.addWeighted(self.image, 1, pureImage, 0.8, 0)
 		if(self.is_save_video):
 			self.videoOut.write(result)
-		
 		cv2.namedWindow("result",0)
 		cv2.imshow("result",result)
 		cv2.waitKey(1)
