@@ -278,11 +278,16 @@ class LaneDetect():
 		#thresholded[(hls_thresh_l == 255) | (x_thresh == 255) ]=255
 		thresholded[(luv_l_thresh == 255) ]=1
 		
+		#rect = np.array([ [0,479], [228,152], [449,152], [594,479] ])
+		#cv2.fillConvexPoly(thresholded, rect, 0)
+		
 		rect = np.array([ [80,479], [220,311], [410,311], [514,479] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
-		rect = np.array([ [239,304], [239,244], [343,244], [343,304] ])
-		cv2.fillConvexPoly(thresholded, rect, 0)
+		#rect = np.array([ [239,304], [239,244], [343,244], [343,304] ])
+		#cv2.fillConvexPoly(thresholded, rect, 0)
+		
+		cv2.circle(thresholded,(305,286),30,(0,0,0),60)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
 		
@@ -319,6 +324,7 @@ class LaneDetect():
 		#thresholded = cv2.warpPerspective(thresholded,self.__M, frame.shape[1::-1], flags=cv2.INTER_LINEAR)
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
+		#lanePixelRange = [32,250] 
 		lanePixelRange = [150,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		self.find_line(thresholded, lanePixelRange) 
@@ -457,39 +463,6 @@ class LaneDetect():
 		if(len(right_lane_inds)>1):
 			right_lane_inds = np.concatenate(right_lane_inds)
 		
-		ROI[nonzeroy[left_lane_inds],nonzerox[left_lane_inds]] = 0
-		ROI[nonzeroy[right_lane_inds],nonzerox[right_lane_inds]] = 0
-		ROI *=255
-		
-		"""
-		cv2.namedWindow("1",0)
-		cv2.imshow("1",ROI)
-		#ROI = cv2.Canny(ROI,0,255)
-		#cv2.namedWindow("2",0)
-		#cv2.imshow("2",ROI)
-		"""
-		self.lane_msg.leftRightAngle = False
-		lines = cv2.HoughLinesP(ROI,1,np.pi/180,200,50,40)
-		if lines is not None:
-			for line in lines:
-				line = line[0]
-				#print(line)
-				if(math.fabs(math.atan2(line[3]-line[1],line[2]-line[0])*180.0/math.pi)<5.0):
-					#print(g_pixel2dis_y[line[3]+lanePixelRange[0]])
-					if(g_pixel2dis_y[line[3]+lanePixelRange[0]]<4.0):
-						self.lane_msg.leftRightAngle = True
-		"""
-		#print(len(lines))
-		lineImage = np.zeros_like(ROI)
-		if lines is not None:
-			for line in lines:
-				#print(line[0],type(line[0]),line[0][0],line[0][1],line[0][2],line[0][3])
-				cv2.line(lineImage,(line[0][0],line[0][1]),(line[0][2],line[0][3]),(255,255,255),3)
-				pass
-		cv2.namedWindow("lineImage",0)
-		cv2.imshow("lineImage",lineImage)
-		cv2.waitKey(1)
-		"""
 		
 		# Extract left and right line pixel positions
 		leftx = nonzerox[left_lane_inds]
@@ -498,14 +471,16 @@ class LaneDetect():
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 		
 		#print(len(leftx), len(rightx))
-		if(len(leftx)<800):
+		minPixelPerlane = 800
+		if(len(leftx) < minPixelPerlane):
 			self.lane_msg.left_lane_validity = False
 		else:
 			self.lane_msg.left_lane_validity = True
-		if(len(rightx)<800):
+		if(len(rightx) < minPixelPerlane):
 			self.lane_msg.right_lane_validity = False
 		else:
 			self.lane_msg.right_lane_validity = True
+			
 		pixel_fit_l = [0]
 		pixel_fit_r = [0]
 		if(len(leftx)>2):
@@ -567,93 +542,6 @@ class LaneDetect():
 		self.lane_msg.lanePixelRange = lanePixelRange
 		
 
-	def find_line_by_previous(self,binary_warped, left_fit, right_fit):
-		nonzero = binary_warped.nonzero()
-		nonzeroy = np.array(nonzero[0])
-		nonzerox = np.array(nonzero[1])
-		margin = 100
-		left_lane_inds = ((nonzerox > (left_fit[0] * nonzeroy + left_fit[1] - margin)) & (nonzerox < (left_fit[0] * nonzeroy +
-		                                                                     left_fit[1] + margin)))
-
-		right_lane_inds = ((nonzerox > (right_fit[0] * nonzeroy + right_fit[1] - margin)) & (nonzerox < (right_fit[0] * nonzeroy +
-		                                                                       right_fit[1] + margin)))
-
-		# Again, extract left and right line pixel positions
-		leftx = nonzerox[left_lane_inds]
-		lefty = nonzeroy[left_lane_inds]
-		rightx = nonzerox[right_lane_inds]
-		righty = nonzeroy[right_lane_inds]
-		# Fit a second order polynomial to each
-		left_fit = np.polyfit(lefty, leftx, 1)
-		right_fit = np.polyfit(righty, rightx, 1)
-		return left_fit, right_fit 
-
-
-	def calculate_lane_state(self,left_fit, right_fit):
-		left_angle=math.atan(left_fit[0]) * self.__xmPerPixel/self.__ymPerpixel
-		right_angle=math.atan(right_fit[0])*self.__xmPerPixel/self.__ymPerpixel
-		
-		angle=((left_angle+right_angle)/2)
-	
-		left_bottom_x = np.polyval(left_fit, self.__image_height)
-		right_bottom_x = np.polyval(right_fit, self.__image_height)
-	
-		x_offset_pixel = 1.0*(left_bottom_x + right_bottom_x - self.__image_width)/2
-		
-		lane_width = (right_bottom_x - left_bottom_x) * self.__xmPerPixel;
-		
-		distance_from_center = x_offset_pixel * self.__xmPerPixel;
-		
-		if (left_angle-right_angle)*180.0/math.pi >20.0 or distance_from_center > 0.5:
-			print('two angle diff or offset is too big -> left:%.2f\t right:%.2f\t offset:%.2f' \
-						%(left_angle*180.0/np.pi,right_angle*180.0/np.pi,distance_from_center))
-			validity = False
-		else:
-			validity = True
-
-		return lane_width,distance_from_center,angle,validity
-
-	def draw_area(self,undist,left_fit,right_fit,is_project=True):
-	
-		Ax = np.polyval(left_fit, 0)
-		Bx = np.polyval(right_fit,0)
-		Cx = np.polyval(right_fit,undist.shape[0])
-		Dx = np.polyval(left_fit,undist.shape[0])
-
-		A = [Ax,0]
-		B = [Bx,0]
-		C = [Cx,undist.shape[0]]
-		D = [Dx,undist.shape[0]]
-
-		rect = np.array([[A,B,C,D]]).astype(np.int)
-		pure = np.zeros_like(undist)
-		cv2.fillPoly(pure, rect, (0, 255, 0))
-		if(is_project):
-			# Warp the blank back to original image space using inverse perspective matrix (Minv)
-			pure = cv2.warpPerspective(pure, self.__Minv, (undist.shape[1], undist.shape[0]))
-		# Combine the result with the original image
-		result = cv2.addWeighted(undist, 1, pure, 0.3, 0)
-		return result
-
-	def draw_values(self,img, distance_from_center,angle):
-		font = cv2.FONT_HERSHEY_SIMPLEX
-		#radius_text = "Radius of Curvature: %sm" % (round(curvature))
-
-		if distance_from_center > 0:
-			pos_flag = 'right'
-		else:
-			pos_flag = 'left'
-
-		#cv2.putText(img, radius_text, (100, 100), font, 1, (255,0,255), 2)
-		center_text = "Vehicle is %.3fm %s of center" % (abs(distance_from_center), pos_flag)
-		cv2.putText(img, center_text, (100, 150), font, 1, (255, 0, 255), 2)
-		#langle_text="left angle is:%.3f"%(left_angle*180/math.pi)
-		#cv2.putText(img,langle_text,(100,200),font,1,(255,0,255),2)
-		#rangle_text="right angle is:%.3f"%(right_angle*180/math.pi)
-		#cv2.putText(img,rangle_text,(100,250),font,1,(255,0,255),2)
-		angle_text="angle is %.3f"%(angle*180/math.pi)
-		cv2.putText(img,angle_text,(100,200),font,1,(255,0,255),2)
-		return img
 		
 class image_converter:
 	def __init__(self,is_reconfig=False):
