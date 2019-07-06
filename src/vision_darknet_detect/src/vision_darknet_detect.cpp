@@ -152,7 +152,8 @@ void Yolo3DetectorNode::convert_rect_to_image_obj(std::vector< RectClassScore<fl
             obj.label = in_objects[i].GetClassString();
             
             ////////////////////////////////////////////////不能走
-			if(obj.label=="Traffic_Light_stop"||obj.label=="Traffic_Light_ambiguous"||obj.label=="Traffic_Light_warning" ) isgo.data=false;
+			if(obj.label=="Red")
+				isgo.data=false;
 
             out_message.objects.push_back(obj);
 
@@ -253,11 +254,6 @@ void Yolo3DetectorNode::image_callback(const sensor_msgs::ImageConstPtr& in_imag
     free(darknet_image_.data);
 }
 
-void Yolo3DetectorNode::config_cb(const autoware_msgs::ConfigSsd::ConstPtr& param)
-{
-    score_threshold_ = param->score_threshold;
-}
-
 
 void Yolo3DetectorNode::Run()
 {
@@ -322,10 +318,6 @@ void Yolo3DetectorNode::Run()
 	
     ROS_INFO("Subscribing to... %s", image_raw_topic_str.c_str());
     subscriber_image_raw_ = node_handle_.subscribe(image_raw_topic_str, 1, &Yolo3DetectorNode::image_callback, this);
-
-    std::string config_topic("/config");
-    config_topic += "/Yolo3";
-    subscriber_yolo_config_ = node_handle_.subscribe(config_topic, 1, &Yolo3DetectorNode::config_cb, this);
 
     ROS_INFO_STREAM( __APP_NAME__ << "" );
 

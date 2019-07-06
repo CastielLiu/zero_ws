@@ -14,7 +14,6 @@
 
 #include <cv_bridge/cv_bridge.h>
 
-#include <autoware_msgs/ConfigSsd.h>
 #include <autoware_msgs/DetectedObject.h>
 #include <autoware_msgs/DetectedObjectArray.h>
 
@@ -93,7 +92,6 @@ class Yolo3DetectorNode {
     void rgbgr_image(image& im);
     image convert_ipl_to_image(const sensor_msgs::ImageConstPtr& msg);
     void image_callback(const sensor_msgs::ImageConstPtr& in_image_message);
-    void config_cb(const autoware_msgs::ConfigSsd::ConstPtr& param);
 public:
     void Run();
 };
