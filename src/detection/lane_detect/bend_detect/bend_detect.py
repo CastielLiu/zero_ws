@@ -325,7 +325,7 @@ class LaneDetect():
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
 		#lanePixelRange = [32,250] 
-		lanePixelRange = [150,340]  #np.int(thresholded.shape[0]/6),480
+		lanePixelRange = [200,340]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		self.find_line(thresholded, lanePixelRange) 
 		
@@ -395,7 +395,7 @@ class LaneDetect():
 		# Set the width of the windows +/- margin
 		margin = 40
 		# Set minimum number of pixels found to recenter window
-		minpix = 80
+		minpix = 40
 		# Create empty lists to receive left and right lane pixel indices
 		left_lane_inds = []
 		right_lane_inds = []
@@ -422,7 +422,7 @@ class LaneDetect():
 			good_right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) &
 						       (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
 			# Append these indices to the lists
-			if(len(good_left_inds)>20 and leftRectInvalidCount<1):
+			if(len(good_left_inds)>20 and leftRectInvalidCount<2):
 				left_lane_inds.append(good_left_inds)
 				startToRecordInvalidRect_left = True
 			elif(startToRecordInvalidRect_left):
@@ -430,7 +430,7 @@ class LaneDetect():
 			elif(window>nwindows/2):
 				leftRectInvalidCount = nwindows
 				
-			if(len(good_right_inds)>20 and rightRectInvalidCount<1):
+			if(len(good_right_inds)>20 and rightRectInvalidCount<2):
 				right_lane_inds.append(good_right_inds)
 				startToRecordInvalidRect_right = True
 			elif(startToRecordInvalidRect_right):
@@ -471,7 +471,7 @@ class LaneDetect():
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 		
 		#print(len(leftx), len(rightx))
-		minPixelPerlane = 800
+		minPixelPerlane = 600
 		if(len(leftx) < minPixelPerlane):
 			self.lane_msg.left_lane_validity = False
 		else:
@@ -586,7 +586,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 2.8   #1.457  3.89
+	l0 = 2.53   #1.457  3.89
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('pixel2dis.txt')
 
