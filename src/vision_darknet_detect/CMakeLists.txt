@@ -141,7 +141,7 @@ IF (CUDA_FOUND)
             src/vision_darknet_detect.cpp
             src/vision_darknet_detect.h
             )
-
+ 
     target_compile_definitions(vision_darknet_detect PUBLIC -DGPU)
 
     target_include_directories(vision_darknet_detect PRIVATE

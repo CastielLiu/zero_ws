@@ -154,7 +154,6 @@ void Yolo3DetectorNode::convert_rect_to_image_obj(std::vector< RectClassScore<fl
             ////////////////////////////////////////////////不能走
 			if(obj.label=="Red")
 				isgo.data=false;
-
             out_message.objects.push_back(obj);
 
         }
@@ -243,8 +242,8 @@ void Yolo3DetectorNode::image_callback(const sensor_msgs::ImageConstPtr& in_imag
     
     convert_rect_to_image_obj(detections, output_message,isgo);
 
-////////////////////////////////////////打印能否走//////////
-	ROS_INFO("veshicle isgo: %d\n",isgo);
+	if(!isgo)
+		ROS_INFO("veshicle isgo: %d\n",isgo);
 	
     publisher_objects_.publish(output_message);
 
