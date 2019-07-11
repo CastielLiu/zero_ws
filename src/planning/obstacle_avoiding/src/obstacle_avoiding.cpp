@@ -13,9 +13,6 @@ void avoidCallback(const driverless_msgs::lidardata::ConstPtr& data)
 }
 
 
-
-
-
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "obstacle_avoiding_node");

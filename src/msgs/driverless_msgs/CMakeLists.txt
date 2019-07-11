@@ -18,6 +18,7 @@ add_message_files(
     ControlCmd.msg
     TrafficSign.msg
     DrawArea.msg
+    lidardata.msg
 )
 
 generate_messages(
