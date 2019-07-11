@@ -1,0 +1,3 @@
+bool lidar_valid
+float32 min_distance
+float32 min_distance_degree
