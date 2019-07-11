@@ -10,6 +10,7 @@
 #include<boost/thread.hpp>
 #include<boost/bind.hpp>
 #include<driverless_msgs/ControlCmd.h>
+#include<std_msgs/Bool.h>
 
 #ifndef PACK
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
@@ -67,6 +68,7 @@ public:
 	void read_stm32_port();
 
 	void cmd_callback(const driverless_msgs::ControlCmd::ConstPtr& cmd);
+	void trafficLight_callback(const std_msgs::Bool::ConstPtr& status);
 	
 private:
 	void Stm32BufferIncomingData(unsigned char *message, unsigned int length);
@@ -81,6 +83,8 @@ private:
 	boost::shared_ptr<boost::thread> readFromStm32_thread_ptr_; //智能指针 
 	
 	ros::Subscriber sub_cmd_;
+	ros::Subscriber sub_trafficLight_;
+	bool is_redLight_;
 	
 	std::string stm32_port_name_;
 	int stm32_baudrate_;

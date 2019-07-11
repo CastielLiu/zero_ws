@@ -36,7 +36,8 @@ static bool openSerial(serial::Serial* & port_ptr, std::string port_name,int bau
 
 }
 
-BaseControl::BaseControl()
+BaseControl::BaseControl():
+	is_redLight_(false)
 {
 	stm32_serial_port_ = NULL;
 
@@ -70,6 +71,7 @@ bool BaseControl::init(int argc,char**argv)
 	assert(max_steering_speed_>0);
 	
 	sub_cmd_ = nh.subscribe("/cmd",1,&BaseControl::cmd_callback,this);
+	sub_trafficLight_ = nh.subscribe("/traffic_light",1,&BaseControl::trafficLight_callback,this);
 	
 	if(!openSerial(stm32_serial_port_,stm32_port_name_,stm32_baudrate_))
 	{
@@ -213,9 +215,12 @@ void printCmdBytes(uint8_t *msg,int len)
 
 void BaseControl::cmd_callback(const driverless_msgs::ControlCmd::ConstPtr& cmd)
 {
+	float speed = cmd->set_speed*100 + 65535/2;
+	if(this->is_redLight_)
+		speed = 0;
 	write_msg_.pkgLen = sizeof(writePkg_t)-3;
 	write_msg_.id = 0x01;
-	write_msg_.speed = cmd->set_speed*100 + 65535/2;
+	write_msg_.speed = speed;
 	write_msg_.steeringAngle = cmd->set_steeringAngle*100 + 65535/2;
 	write_msg_.checkNum = generateCheckNum(&write_msg_,sizeof(write_msg_));
 	
@@ -224,6 +229,11 @@ void BaseControl::cmd_callback(const driverless_msgs::ControlCmd::ConstPtr& cmd)
 	//printf("%d\t%d\r\n",write_msg_.speed,write_msg_.steeringAngle);
 	
 	//printCmdBytes((uint8_t *)&write_msg_,sizeof(write_msg_));
+}
+
+void BaseControl::trafficLight_callback(const std_msgs::Bool::ConstPtr& status)
+{
+	is_redLight_ = !status->data; // is_redLight_ = !isgo
 }
 
 uint8_t BaseControl::generateCheckNum(const void* buf,size_t len)
