@@ -54,11 +54,12 @@ void LaneKeeping::laneDetect_callback(const driverless_msgs::Lane::ConstPtr& msg
 	
 	float target_point_x,
 		 target_point_y = foresight_dis;
+	float offset_one_lane = 0.75; //1.0 in the bend
 	
 	if(msg->left_lane_validity && (!msg->right_lane_validity))
-		target_point_x = left_point_x +1.0;
+		target_point_x = left_point_x +offset_one_lane;
 	else if(msg->right_lane_validity && (!msg->left_lane_validity))
-		target_point_x = right_point_x - 1.0;
+		target_point_x = right_point_x - offset_one_lane;
 	else if((!msg->right_lane_validity) && (!msg->left_lane_validity))
 		target_point_x = last_steeringAngle;
 	else 

@@ -289,13 +289,13 @@ class LaneDetect():
 		#rect = np.array([ [0,479], [228,152], [449,152], [594,479] ])
 		#cv2.fillConvexPoly(thresholded, rect, 0)
 		
-		rect = np.array([ [80,479], [220,311], [410,311], [514,479] ])
+		rect = np.array([ [137,410], [137,320], [449,320], [449,410] ])
 		cv2.fillConvexPoly(thresholded, rect, 0)
 		
 		#rect = np.array([ [239,304], [239,244], [343,244], [343,304] ])
 		#cv2.fillConvexPoly(thresholded, rect, 0)
 		
-		cv2.circle(thresholded,(305,286),30,(0,0,0),60)
+		cv2.circle(thresholded,(305,286),40,(0,0,0),80)
 		
 		thresholded = cv2.cvtColor(thresholded,cv2.COLOR_RGB2GRAY)
 		
@@ -336,7 +336,7 @@ class LaneDetect():
 		#cv2.imshow("afterPerspective",thresholded*255)
 		
 		#lanePixelRange = [32,250] 
-		lanePixelRange = [200,340]  #np.int(thresholded.shape[0]/6),480
+		lanePixelRange = [125,297]  #np.int(thresholded.shape[0]/6),480
 		#fited by pixels and fited by true distance
 		self.find_line(thresholded, lanePixelRange) 
 		
@@ -598,7 +598,7 @@ def cameraInfo_callback(in_message):
 	cx = in_message.P[2]
 	cy = in_message.P[6]
 	h = 0.6   #0.575
-	l0 = 2.53   #1.457  3.89
+	l0 = 2.30   #1.457  3.89
 	generatePixel2disTable(h,l0,fx,fy,cx,cy)
 	dumpPixel2distable('pixel2dis.txt')
 
