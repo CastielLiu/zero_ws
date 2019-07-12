@@ -1,15 +1,17 @@
 <!-- -->
 <launch>
 
-	<node name="bend_detect" pkg="lane_detect" type="bend_detect.py" >
-		<param name="is_debug" value="false" />
+	<include file="$(find my_image_transport)/launch/my_image_transport.launch" />
+	
+	<node name="bend_detect" pkg="lane_detect" type="bend_detect.py" output="screen">
+		<param name="is_debug" value="true" />
 		<param name="is_reconfig" value="true" />
 		<param name="is_calibrate" value="false"/>
 		<param name="curve_fit_num" value="3" />
 		
 	</node>
 	
-	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" output="screen" >
+	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" >
 		<param name="cmd_topic_name" value="/cmd"/>
 		<param name="lane_keeping_speed" value="1.5"/>
 		<param name="foresight_distance" value="3.0"/>
@@ -22,6 +24,8 @@
 	<node type="base_control_node" pkg ="base_control" name="base_control_node" >
 		<param name ="stm32_port_name"   value="/dev/ttyTHS2"/>
 	</node>
+	
+	<node type="rqt_reconfigure" pkg="rqt_reconfigure" name="rqt_reconfigure"/>
 	
 </launch>
 

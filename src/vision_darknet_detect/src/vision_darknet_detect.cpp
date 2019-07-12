@@ -242,7 +242,7 @@ void Yolo3DetectorNode::image_callback(const sensor_msgs::ImageConstPtr& in_imag
     
     convert_rect_to_image_obj(detections, output_message,isgo);
 
-	if(!isgo)
+	if(!isgo.data)
 		ROS_INFO("veshicle isgo: %d\n",isgo);
 	
     publisher_objects_.publish(output_message);

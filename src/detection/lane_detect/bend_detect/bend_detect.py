@@ -154,6 +154,7 @@ class LaneDetect():
 		self.__mag_thresh = (174,255)
 		
 		self.__debug = False
+		self.__destroyAllWindows = False
 		self.__calibrate = False
 		self.__fitNum = 3
 		
@@ -163,18 +164,25 @@ class LaneDetect():
 		self.last_rightx_base = -1
 	
 	def setThreshold(self,config):
+	
+		self.__debug = config.is_debug
+		self.__destroyAllWindows = True
+		
 		self.__sobel_thresh_x = (config.x_sobel_thresh_min,config.x_sobel_thresh_max)
 		self.__sobel_thresh_y = (config.y_sobel_thresh_min,config.y_sobel_thresh_max)
 		self.__h_thresh = (config.h_thresh_min,config.h_thresh_max)
 		self.__l_thresh = (config.l_thresh_min,config.l_thresh_max)
 		self.__s_thresh = (config.s_thresh_min,config.s_thresh_max)
-		
 		#self.__dir_thresh = (config.dir_thresh_min,config.dir_thresh_max)
 		self.__luv_l_thresh = (config.luv_l_thresh_min,config.luv_l_thresh_max)
 		self.__mag_thresh = (config.mag_thresh_min,config.mag_thresh_max)
 	
 	def setDebug(self,status):
 		self.__debug = status
+	
+	def is_debug(self):
+		return self.__debug
+		
 	def setCaibrate(self,status):
 		self.__calibrate = status
 	def setFitNum(self,num):
@@ -312,6 +320,9 @@ class LaneDetect():
 			cv2.namedWindow('Binary graph',0)
 			cv2.imshow("Binary graph",thresholded*255)
 			cv2.waitKey(1)
+		elif self.__destroyAllWindows:
+			cv2.destroyAllWindows()
+			self.__destroyAllWindows = False
 		
 		return thresholded
 
@@ -572,6 +583,7 @@ class image_converter:
 		
 	def config_callback(self,config, level):
 		self.lane_detect.setThreshold(config)
+		
 		return config
 
 def cameraInfo_callback(in_message):
