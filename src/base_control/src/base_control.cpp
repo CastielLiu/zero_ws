@@ -217,7 +217,7 @@ void BaseControl::cmd_callback(const driverless_msgs::ControlCmd::ConstPtr& cmd)
 {
 	float speed = cmd->set_speed*100 + 65535/2;
 	if(this->is_redLight_)
-		speed = 0;
+		speed = 0.1*100 + 65535/2;
 	write_msg_.pkgLen = sizeof(writePkg_t)-3;
 	write_msg_.id = 0x01;
 	write_msg_.speed = speed;

@@ -404,7 +404,7 @@ class LaneDetect():
 		nonzerox = nonzero[1]
 	
 		# Set the width of the windows +/- margin
-		margin = 40
+		margin = 45
 		# Set minimum number of pixels found to recenter window
 		minpix = 40
 		# Create empty lists to receive left and right lane pixel indices
@@ -482,7 +482,7 @@ class LaneDetect():
 		righty = nonzeroy[right_lane_inds] +lanePixelRange[0]
 		
 		#print(len(leftx), len(rightx))
-		minPixelPerlane = 600
+		minPixelPerlane = 400
 		if(len(leftx) < minPixelPerlane):
 			self.lane_msg.left_lane_validity = False
 		else:

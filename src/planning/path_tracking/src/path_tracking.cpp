@@ -6,6 +6,7 @@ PathTracking::PathTracking()
 	target_point_index_=0;
 	is_gps_ok = false;
 	
+	gps_controlCmd_.status = true;
 
 	gps_controlCmd_.set_speed =0.0;
 

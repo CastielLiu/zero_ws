@@ -1,0 +1,21 @@
+<!-- -->
+<launch>
+
+	
+	<node name="bend_detect" pkg="lane_detect" type="bend_detect.py" output="screen">
+		<param name="is_debug" value="true" />
+		<param name="is_reconfig" value="true" />
+		<param name="is_calibrate" value="false"/>
+		<param name="curve_fit_num" value="3" />
+		
+	</node>
+
+	
+	<node name="show_detect_result" type="show_result.py" pkg="lane_detect"/>
+	
+	<node type="rqt_reconfigure" pkg="rqt_reconfigure" name="rqt_reconfigure"/>
+	
+</launch>
+
+
+

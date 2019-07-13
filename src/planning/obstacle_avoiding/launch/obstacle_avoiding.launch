@@ -14,7 +14,7 @@
 
     
     <node name="obstacle_avoiding_node" pkg="obstacle_avoiding" type="obstacle_avoiding_node" output="screen">
-        <param name="avoiding_disThreshold" value="2"/>
+        <param name="avoiding_disThreshold" value="1.5"/>
 		<param name="speed" value="1.0"/>
 		<param name="steeringAngle" value="15"/>
     </node>
@@ -27,10 +27,12 @@
 
      
     <node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/gps_data.txt"/>
+		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/gps_data_ee.txt"/>
         <param name="vehicle_axis_dis" value="0.65"/>
-		<param name="disThreshold" value="3.0"/>
-		<param name="speed" value="1.0"/>    </node>
+		<param name="disThreshold" value="2.5"/>
+		<param name="speed" value="2"/>
+		<remap from="/cmd" to="gps_cmd"/>
+	</node>
 
 	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
 	
@@ -38,8 +40,6 @@
 		<param name ="baudrate"    value="115200"/>
 	</node>
 	
-
-
 
     <node type="base_control_node" pkg ="base_control" name="base_control_node" >
     	<param name ="stm32_port_name"   value="/dev/ttyTHS2"/>

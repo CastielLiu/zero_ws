@@ -15,7 +15,7 @@ GridTracking::~GridTracking(){}
 
 bool GridTracking::generatePathPoints(std::vector<gpsMsg_t>& path_points)
 {
-	int indexes[]={0,1,8,3,4,5,8,7,0,1,2,3,4,5,8,7};
+	int indexes[]={0,1,2,3,4,1,2,3,4,5};
 	
 	for(int i=0; i<sizeof(indexes)/sizeof(int)-1; i++)
 	{
