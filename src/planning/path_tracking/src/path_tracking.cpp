@@ -31,6 +31,8 @@ bool PathTracking::init(ros::NodeHandle nh,ros::NodeHandle nh_private)
 	nh_private.param<std::string>("path_points_file",path_points_file_,"");
 	nh_private.param<float>("disThreshold",disThreshold_, 1.0);
 	nh_private.param<float>("speed",speed_,1.0);
+	nh_private.param<float>("low_speed",low_speed_,1.0);
+	
 	
 	if(path_points_file_.empty())
 	{
@@ -91,6 +93,17 @@ void PathTracking::run()
 		else
 			gps_controlCmd_.set_speed = speed_;
 		
+		float current_point_index = target_point_index_ - 20;
+		if(current_point_index>70 && current_point_index <110)
+			gps_controlCmd_.set_speed = low_speed_;
+		else if(current_point_index> 160 && current_point_index <190)
+			gps_controlCmd_.set_speed = low_speed_;
+		else if(current_point_index> 245 && current_point_index <275)
+			gps_controlCmd_.set_speed = low_speed_;
+		else if(current_point_index> 325 && current_point_index <360)
+			gps_controlCmd_.set_speed = low_speed_;
+		
+		
 		if( dis_yaw.first < disThreshold_)
 		{
 			target_point_index_ ++;
@@ -112,7 +125,7 @@ if(i%20==0){
 				current_point_.longitude,current_point_.latitude,current_point_.yaw,
 				target_point_.longitude,target_point_.latitude,dis_yaw.second);
 		ROS_INFO("dis:%f\tyaw_err:%f\t Radius:%f\t t_roadWheelAngle:%f\n",dis_yaw.first,yaw_err,turning_radius,t_roadWheelAngle);
-	}	
+	}
 		saturate_cast<float>(t_roadWheelAngle,25.0);
 		
 		gps_controlCmd_.set_steeringAngle = t_roadWheelAngle;

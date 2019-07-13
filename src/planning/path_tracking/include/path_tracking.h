@@ -50,6 +50,7 @@ private:
 	driverless_msgs::ControlCmd gps_controlCmd_;
 	
 	float speed_;
+	float low_speed_;
 
 	boost::mutex mutex_;
 	bool is_gps_ok;

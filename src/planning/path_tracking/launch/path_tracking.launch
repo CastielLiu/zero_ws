@@ -7,6 +7,8 @@
         <param name="vehicle_axis_dis" value="0.65"/>
 		<param name="disThreshold" value="2.0"/>
 		<param name="speed" value="2.5"/>
+		<param name="low_speed" value="1.0"/>
+		
     </node>
 
 	<node name="nuogeng_node" pkg="nuogeng" type ="nuogeng_node" output="screen" >
