@@ -1,6 +1,6 @@
 <!-- -->
 <launch>
-	<arg name="file" default="gps_data_2.txt"/>
+	<arg name="file" default="gps_data_end.txt"/>
 	<node name="record_gps_data_node" pkg="record_gps_data" type="record_gps_data_node" output="screen">
 		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/$(arg file)"/>
 	 </node>

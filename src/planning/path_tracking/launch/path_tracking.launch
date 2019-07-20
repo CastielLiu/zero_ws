@@ -3,10 +3,10 @@
 
 	
 	<node name="path_tracking_node" pkg="path_tracking" type="path_tracking_node" output="screen">
-		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/gps_data_2.txt"/>
+		<param name="path_points_file" value="$(find record_gps_data)/../gps_data/gps_data_end.txt"/>
         <param name="vehicle_axis_dis" value="0.65"/>
-		<param name="disThreshold" value="2.0"/>
-		<param name="speed" value="2.5"/>
+		<param name="disThreshold" value="2.5"/>
+		<param name="speed" value="4.0"/>
 		<param name="low_speed" value="1.0"/>
 		
     </node>

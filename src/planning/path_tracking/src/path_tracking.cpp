@@ -92,8 +92,8 @@ void PathTracking::run()
 			gps_controlCmd_.set_speed = 0.0;
 		else
 			gps_controlCmd_.set_speed = speed_;
-		
-		float current_point_index = target_point_index_ - 20;
+		/*
+		float current_point_index = target_point_index_ - 10;
 		if(current_point_index>70 && current_point_index <110)
 			gps_controlCmd_.set_speed = low_speed_;
 		else if(current_point_index> 160 && current_point_index <190)
@@ -102,7 +102,7 @@ void PathTracking::run()
 			gps_controlCmd_.set_speed = low_speed_;
 		else if(current_point_index> 325 && current_point_index <360)
 			gps_controlCmd_.set_speed = low_speed_;
-		
+		*/
 		
 		if( dis_yaw.first < disThreshold_)
 		{

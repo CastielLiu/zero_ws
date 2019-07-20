@@ -2,7 +2,7 @@
 
 <launch>
 <arg name="id" default="1"/>
-<arg name="show" default="true" />
+<arg name="show" default="false" />
 <arg name="file" default="1.yaml"/>
 
 	<node pkg="my_image_transport" type="my_publisher" name="my_publisher" output="screen" args="$(arg id)" >

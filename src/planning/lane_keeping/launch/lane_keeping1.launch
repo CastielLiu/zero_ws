@@ -13,7 +13,7 @@
 	
 	<node name="lane_keeping_node" pkg="lane_keeping" type="lane_keeping_node" >
 		<param name="cmd_topic_name" value="/cmd"/>
-		<param name="lane_keeping_speed" value="2.0"/>
+		<param name="lane_keeping_speed" value="1.0"/>
 		<param name="foresight_distance" value="3.0"/>
 		
 	</node>
