@@ -146,7 +146,6 @@ static inline void LLtoUTM(const double Lat, const double Long,
                 UTMNorthing += 10000000.0; //10000000 meter offset for southern hemisphere
 }
 
-
 void gpsCallBack(const gps_msgs::Inspvax::ConstPtr& gps)
 {
 	double northing, easting;
