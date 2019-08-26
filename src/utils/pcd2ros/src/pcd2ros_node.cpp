@@ -4,7 +4,7 @@
 #include <pcl/point_types.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_conversions/pcl_conversions.h>
- 
+
 
 ros::Publisher puba;
 
